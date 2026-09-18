@@ -132,7 +132,7 @@ class Tilemap {
    * @method buildColliders
    * @description Generates static physics colliders from the current map. Solid
    * cells are merged greedily into horizontal runs, so a row of N tiles becomes
-   * one box collider instead of N — far fewer bodies for the physics engine.
+   * one box collider instead of N, far fewer bodies for the physics engine.
    * The bodies are tagged so collision callbacks resolve back to `ownerObject`
    * (defaults to the tilemap's GameObject). Call again after setMap to rebuild.
    *

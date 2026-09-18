@@ -1,4 +1,4 @@
-import * as planck from "planck";
+import { Box } from "../physics/index.js";
 import BoxColliderDebug from "./BoxColliderDebug.js";
 import SceneManager from "../managers/SceneManager.js";
 import Collider from "./Collider.js";
@@ -26,14 +26,12 @@ class BoxCollider extends Collider {
     filter = null
   ) {
     super(rigidbody, isSensor, parentObject);
-    this.collider = rigidbody
-      .getBody()
-      .createFixture(new planck.Box(fixtureSize.x, fixtureSize.y), {
-        density: density,
-        friction: friction,
-        restitution: restitution,
-        isSensor: isSensor,
-      });
+    this.collider = rigidbody.createFixture(Box(fixtureSize.x, fixtureSize.y), {
+      density: density,
+      friction: friction,
+      restitution: restitution,
+      isSensor: isSensor,
+    });
     this.fixtureSize = fixtureSize;
     this.rigidbody.setCollider(this);
     this.name = "BoxCollider" + this.id;

@@ -206,7 +206,7 @@ declare class Drawable {
      * @description Frees this drawable's GPU resources: its vertex/texcoord
      * buffers and its reference on the shared texture (the GL texture itself is
      * deleted when the last drawable using it is disposed). Call it when the
-     * owning object is permanently removed — GameObject.destroy() and
+     * owning object is permanently removed. GameObject.destroy() and
      * Scene.remove(obj, { dispose: true }) do it for you. Safe to call twice.
      */
     dispose(): void;

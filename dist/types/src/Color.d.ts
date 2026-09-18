@@ -8,6 +8,7 @@ export default Color;
  * @param {number} a - The alpha value
  */
 declare class Color {
+    static fromHex(hex: any): Color;
     constructor(r: any, g: any, b: any, a?: number);
     r: any;
     g: any;

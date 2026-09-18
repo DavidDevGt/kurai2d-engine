@@ -4,7 +4,7 @@ export default Material;
  * @description A custom shader for a Drawable. By default it reuses the engine's
  * standard vertex shader (so transforms, the camera, and instancing keep
  * working) and only overrides the fragment program. Pass `options.vertex` to
- * also supply a custom VERTEX program — the escape hatch for effects the fixed
+ * also supply a custom VERTEX program: the escape hatch for effects the fixed
  * pipeline can't express (perspective tilt, vertex waves, billboarding, ...).
  *
  * The fragment shader always has: `vTexCoord`, `vFragPos`, `vInstanceColor`,
@@ -13,7 +13,7 @@ export default Material;
  * `uTime`, and must write `vTexCoord` + `gl_Position`.
  *
  * Declare extra uniforms and set them via `set(name, value)`. A uniform value
- * may be a number, an array (vec2/3/4), or a FUNCTION — the function is called
+ * may be a number, an array (vec2/3/4), or a FUNCTION: the function is called
  * each draw and receives the Drawable currently rendering, so a single shared
  * Material can read PER-OBJECT state (e.g. each card's own tilt angle).
  *

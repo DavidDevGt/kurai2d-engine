@@ -4,7 +4,7 @@ import Interpolator from "../Interpolator.js";
  * @class NetworkManager
  * @description A thin, optional multiplayer layer over Colyseus. `colyseus.js`
  * is an optional peer dependency and is imported dynamically, so the engine has
- * no hard dependency on it — games that don't use networking never load it.
+ * no hard dependency on it, so games that don't use networking never load it.
  *
  * It wraps connection/room lifecycle, exposes a small event API
  * (onStateChange / onMessage / onAdd / onRemove / onLeave), and bundles an
@@ -140,7 +140,7 @@ class NetworkManager {
 
   /**
    * @method now
-   * @description Seconds since this manager was created — a convenient clock for
+   * @description Seconds since this manager was created, a convenient clock for
    * feeding the interpolator.
    * @returns {number}
    */

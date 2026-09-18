@@ -74,7 +74,7 @@ class Behaviour {
    * @description Called when the owner's body starts touching another. Requires
    * the Physics world to be ticked. Override in subclasses.
    * @param {Object} other - The other GameObject/Instance (or null)
-   * @param {Object} contact - The planck contact
+   * @param {Object} contact - The physics contact
    */
   onCollisionEnter(other, contact) {}
 
@@ -82,7 +82,7 @@ class Behaviour {
    * @method onCollisionExit
    * @description Called when the owner's body stops touching another.
    * @param {Object} other - The other GameObject/Instance (or null)
-   * @param {Object} contact - The planck contact
+   * @param {Object} contact - The physics contact
    */
   onCollisionExit(other, contact) {}
 }

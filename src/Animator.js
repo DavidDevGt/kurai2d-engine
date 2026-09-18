@@ -5,7 +5,7 @@ import Drawable from "./Drawable.js";
  * @class Animator
  * @description A component that manages named animation clips for a Texture (or
  * any Drawable) on the same GameObject. Register clips once, then switch between
- * them by name — handy for character states like idle/run/jump.
+ * them by name, handy for character states like idle/run/jump.
  *
  * @example
  * const anim = new Animator();

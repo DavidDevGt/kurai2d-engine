@@ -1,4 +1,4 @@
-import * as planck from "planck";
+import { Circle } from "../physics/index.js";
 import SceneManager from "../managers/SceneManager.js";
 import CircleColliderDebug from "./CircleColliderDebug.js";
 import Collider from "./Collider.js";
@@ -26,14 +26,12 @@ class CircleCollider extends Collider {
     filter = null
   ) {
     super(rigidbody, isSensor, parentObject);
-    this.collider = rigidbody
-      .getBody()
-      .createFixture(new planck.Circle(radius), {
-        density: density,
-        friction: friction,
-        restitution: restitution,
-        isSensor: isSensor,
-      });
+    this.collider = rigidbody.createFixture(Circle(radius), {
+      density: density,
+      friction: friction,
+      restitution: restitution,
+      isSensor: isSensor,
+    });
     this.radius = radius;
     this.rigidbody.setCollider(this);
     this.name = "CircleCollider" + this.id;

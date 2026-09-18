@@ -6,7 +6,7 @@ export const GID_MASK: 536870911;
  * @description Imports orthogonal maps exported from the Tiled editor
  * (https://www.mapeditor.org) in JSON format into the engine's Tilemap, plus
  * helpers to pull object layers (spawn points, triggers, etc.) out as plain
- * data. Pure parsing — pass it the already-parsed JSON object (load it with
+ * data. Pure parsing: pass it the already-parsed JSON object (load it with
  * AssetManager.json or fetch).
  *
  * @example

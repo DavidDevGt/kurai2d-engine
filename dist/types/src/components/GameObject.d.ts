@@ -26,7 +26,7 @@ declare class GameObject {
     setLayer(layer: number): GameObject;
     /**
      * @method setScreenSpace
-     * @description When true, the object ignores the camera (fixed on screen) —
+     * @description When true, the object ignores the camera (fixed on screen),
      * useful for HUD/UI. Position is then in pixels from the viewport center.
      * Note: not supported for InstancedTexture-based objects.
      * @param {boolean} value
@@ -114,7 +114,7 @@ declare class GameObject {
      * @description Permanently tears the object down: disposes every Drawable's
      * GPU resources, destroys physics bodies, and runs Behaviour.onDestroy().
      * Use it (or Scene.remove(obj, { dispose: true })) when an object will not
-     * be re-added — plain Scene.remove() keeps GPU resources alive for re-use.
+     * be re-added: plain Scene.remove() keeps GPU resources alive for re-use.
      * Safe to call twice.
      */
     destroy(): void;

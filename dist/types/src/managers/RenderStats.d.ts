@@ -4,7 +4,7 @@ export default RenderStats;
  * @description Frame-level render counters, incremented by every draw site in
  * the engine (Drawable, InstancedTexture, SpriteBatch, post-processing) and
  * reset at the start of each drawScene. Read the previous completed frame via
- * `RenderStats.frame` or `emerald.getRenderStats()` — DebugOverlay shows it
+ * `RenderStats.frame` or `emerald.getRenderStats()`. DebugOverlay shows it
  * automatically.
  *
  * - drawCalls:    GPU draw commands issued (the batching win shows up here)

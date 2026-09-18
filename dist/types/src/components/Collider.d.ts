@@ -18,12 +18,18 @@ declare class Collider {
      * @method syncDebugShape
      * @description Mirrors a transform onto the debug shape, but only if one has
      * already been created. Never forces lazy creation.
+     *
+     * The rigidbody's spawn offset is added back, because the collider sits at
+     * `transform + offset` while the transform tracks the renderable. Without it
+     * the debug shape would drift away from the collider it is supposed to be
+     * showing on any body built with an offset.
+     *
      * @param {Transform} transform - The source transform
      */
     syncDebugShape(transform: Transform): void;
     /**
      * @method setFilter
-     * @description Sets the raw planck collision filter on this collider's
+     * @description Sets the raw collision filter on this collider's
      * fixture. Two fixtures collide only when each one's category bit is present
      * in the other's mask. Subclasses must have created `this.collider`
      * (the fixture) first.

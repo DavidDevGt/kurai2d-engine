@@ -13,6 +13,14 @@ class Color {
     this.b = b;
     this.a = a;
   }
+
+  static fromHex(hex) {
+    const value = hex.startsWith("#") ? hex.slice(1) : hex;
+    const r = parseInt(value.slice(0, 2), 16);
+    const g = parseInt(value.slice(2, 4), 16);
+    const b = parseInt(value.slice(4, 6), 16);
+    return new Color(r, g, b, 255);
+  }
 }
 
 export default Color;

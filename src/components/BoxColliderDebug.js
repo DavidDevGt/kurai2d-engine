@@ -14,13 +14,12 @@ class BoxColliderDebug {
     this.physics = this.rigidbody.physics;
     this.scale = this.physics.getScale();
     this.color = color || new Color(255, 0, 0, 255);
+    const body = this.rigidbody.getBody();
     this.gameObject = new GameObject(
       "BoxColliderDebug",
       new Vector3(
-        this.rigidbody.getBody().getPosition().x *
-          this.rigidbody.getPhysics().getScale(),
-        this.rigidbody.getBody().getPosition().y *
-          this.rigidbody.getPhysics().getScale(),
+        body.getPosition().x * this.scale,
+        body.getPosition().y * this.scale,
         100
       ),
       this.rigidbody.getAngle(),

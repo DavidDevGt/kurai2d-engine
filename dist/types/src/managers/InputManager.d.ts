@@ -5,10 +5,10 @@ export default InputManager;
  * gamepad support (analog sticks/triggers, semantic button names, rumble,
  * connect events, and per-controller mapping), with rebindable named actions.
  * Call `update()` once per frame so `justPressed`/`justReleased` edge queries
- * work for every device — including the gamepad.
+ * work for every device, including the gamepad.
  *
  * Gamepad tokens (usable anywhere a key token is, including in mapAction and
- * justPressed) — `<i>` is the pad index:
+ * justPressed); `<i>` is the pad index:
  *   "pad:<i>:south" / "pad:<i>:a"      - face buttons (also east/b, west/x, north/y)
  *   "pad:<i>:l1" / "pad:<i>:r2" ...    - shoulders / triggers
  *   "pad:<i>:start" / "pad:<i>:select" - center buttons
@@ -20,6 +20,11 @@ export default InputManager;
  *   "gamepad:<n>"                      - legacy: raw button <n> on pad 0
  * Names resolve through the active mapping, so "pad:0:south" is the bottom face
  * button regardless of whether the pad reports Xbox or PlayStation ordering.
+ *
+ * Typing these by hand means remembering the exact spelling of every button
+ * name above; {@link Gamepad} builds the same strings from named constants
+ * instead (`Gamepad.get(0).key(Gamepad.SOUTH)` === "pad:0:south"), which most
+ * editors will autocomplete the way an enum's members would.
  *
  * @example
  * const input = new InputManager();
@@ -65,6 +70,15 @@ declare class InputManager {
     private _disconnectHandlers;
     /** @private */
     private _connected;
+    /**
+     * Which device last produced real input: "keyboard", "mouse",
+     * "gamepad", "touch", or null before anything has happened yet. See
+     * {@link getLastActiveDevice}.
+     * @private
+     */
+    private _lastActiveDevice;
+    /** Pending {@link identifyButton} calls, resolved from `update()`. @private */
+    private _buttonWaiters;
     /** @private */
     private _onKeyDown;
     /** @private */
@@ -252,6 +266,27 @@ declare class InputManager {
      */
     isGamepadConnected(padIndex?: number): boolean;
     /**
+     * @method getLastActiveDevice
+     * @description Which device the player most recently *actually used*,
+     * not just "is a gamepad plugged in" (see `isGamepadConnected`, which stays
+     * true all game long once one is), but "did they just press a key, click,
+     * touch, or move a gamepad button/stick". A pad being connected doesn't
+     * mean it's what's driving the game right now; this is the signal for
+     * swapping on-screen prompts between keyboard and gamepad button icons as
+     * the player actually switches between them mid-session.
+     *
+     * Only counts deliberate input: keydown, mousedown, and touch, not
+     * incidental mouse movement, so idly nudging the mouse while playing on a
+     * pad won't flip prompts back to keyboard/mouse.
+     *
+     * @example
+     * // once per frame, after input.update():
+     * hud.setPromptStyle(input.getLastActiveDevice() === "gamepad" ? "pad" : "keyboard");
+     *
+     * @returns {"keyboard"|"mouse"|"gamepad"|"touch"|null} - null before any input at all
+     */
+    getLastActiveDevice(): "keyboard" | "mouse" | "gamepad" | "touch" | null;
+    /**
      * @method getPressedButtons
      * @description Diagnostic: raw indices of all currently pressed buttons on a
      * pad. Handy for discovering an unknown controller's layout.
@@ -259,6 +294,55 @@ declare class InputManager {
      * @returns {number[]}
      */
     getPressedButtons(padIndex?: number): number[];
+    /**
+     * @method identifyButton
+     * @description Resolves with the raw index of the next *new* button press
+     * on a pad: the reliable way to support a controller whose layout isn't
+     * already covered by the standard/registered mapping tables (a Steam
+     * Controller running outside Steam Input, an old flight stick, anything
+     * with a scrambled button order), instead of guessing indices: ask for one
+     * physical press and record wherever it actually lands on that specific
+     * device. Keep calling `update()` as normal while waiting; the promise
+     * resolves on the frame a button transitions from up to down. A button
+     * already held when this is called doesn't count; only a fresh press does.
+     *
+     * @example
+     * console.log("Press the button you want for Jump…");
+     * const index = await input.identifyButton(0);
+     * InputManager.registerGamepadMapping(input.getGamepadInfo(0).id, {
+     *   buttons: { south: index },
+     * });
+     *
+     * @param {number} [padIndex=0]
+     * @returns {Promise<number>} - Never resolves if no new button is ever pressed
+     */
+    identifyButton(padIndex?: number): Promise<number>;
+    /**
+     * @method calibrateGamepad
+     * @description Walks a list of semantic button names one at a time, asking
+     * for a physical press for each (see {@link identifyButton}), and resolves
+     * with a `{name: rawIndex}` map ready to hand straight to
+     * `InputManager.registerGamepadMapping`, a complete fix for an oddball
+     * controller in a few seconds, without knowing anything about its layout
+     * in advance.
+     *
+     * @example
+     * const mapping = await input.calibrateGamepad(
+     *   0,
+     *   ["south", "east", "west", "north", "l1", "r1", "start"],
+     *   (name, i, total) => showPrompt(`(${i + 1}/${total}) Press the button for "${name}"`)
+     * );
+     * InputManager.registerGamepadMapping(input.getGamepadInfo(0).id, { buttons: mapping });
+     *
+     * @param {number} padIndex
+     * @param {string[]} names - Semantic names to calibrate, e.g. ["south", "east", "start"]
+     * @param {(name: string, index: number, total: number) => void} [onPrompt] -
+     *   Called right before waiting for each name, so you can show "press ___" UI
+     * @returns {Promise<Object.<string, number>>} - { [name]: rawButtonIndex }
+     */
+    calibrateGamepad(padIndex: number, names: string[], onPrompt?: (name: string, index: number, total: number) => void): Promise<{
+        [x: string]: number;
+    }>;
     /**
      * @method _decodeHat
      * @description Some non-standard pads report the d-pad as an 8-way "hat" on a
@@ -282,6 +366,13 @@ declare class InputManager {
      * per frame after reading input.
      */
     update(): void;
+    /**
+     * @method _resolveButtonWaiters
+     * @description Resolves any {@link identifyButton} calls whose pad just
+     * saw a button go from up to down.
+     * @private
+     */
+    private _resolveButtonWaiters;
     /**
      * @method destroy
      * @description Removes all event listeners.

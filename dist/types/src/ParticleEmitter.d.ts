@@ -3,7 +3,7 @@ export default ParticleEmitter;
  * @class ParticleEmitter
  * @description A reliable, allocation-free particle system built from a fixed
  * pool of ordinary textured GameObjects. Each live particle's transform, tint
- * and opacity are driven by hand every frame — there is no instanced-draw /
+ * and opacity are driven by hand every frame; there is no instanced-draw /
  * dynamic-buffer lifecycle to desync, so it keeps drawing for the whole session
  * (unlike the InstancedTexture-based `Particles`, which can stop emitting after
  * heavy reuse on some GPUs).

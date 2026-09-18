@@ -99,7 +99,7 @@ declare class UI {
     private _hitTest;
     /**
      * @method isOver
-     * @description Whether an interactive element is under the given page point —
+     * @description Whether an interactive element is under the given page point,
      * useful to suppress game clicks behind the UI.
      */
     isOver(clientX: any, clientY: any): boolean;

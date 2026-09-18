@@ -28,6 +28,8 @@ declare class InstancedTexture extends Drawable {
     static: boolean;
     /** @private */
     private _matricesDirty;
+    /** The animation every instance starts with; set by playAnimation/playAnimationOnce. @private */
+    private _defaultAnimation;
     /**
      * @method setStatic
      * @description Toggles static mode (see constructor notes).
@@ -257,11 +259,24 @@ declare class InstancedTexture extends Drawable {
     handleInstanceHover(event: Event, x: number, y: number, lastHoveredInstance: Instance): Instance;
     /**
      * @method playAnimationOnce
-     * @description Plays an animation once
+     * @description Plays the same animation once, in lockstep, on every
+     * instance, then holds each on its last frame: the current instances
+     * immediately, and any added later via {@link InstancedTexture#addInstance}.
      * @param {Array} frames - The frames to play
-     * @param {number} speed - The speed of the animation
+     * @param {number} [speed=1000] - Milliseconds per frame
      */
     playAnimationOnce(frames: any[], speed?: number): void;
+    /**
+     * @method stopAnimation
+     * @description Stops the shared animation started by playAnimation/
+     * playAnimationOnce on every current instance, and clears it so instances
+     * added afterwards no longer start playing it either. Instances animated
+     * individually via {@link InstancedTexture#animateInstance} are unaffected
+     * unless you stop them the same way, through {@link InstancedTexture#stopInstanceAnimation}.
+     * @param {boolean} [revertToOriginal=false] - Whether to reset each
+     *   instance back to the frame it had before playAnimation was called
+     */
+    stopAnimation(revertToOriginal?: boolean): void;
 }
 import Drawable from "./Drawable.js";
 import Instance from "./Instance.js";

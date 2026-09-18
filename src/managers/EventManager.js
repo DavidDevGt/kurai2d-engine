@@ -200,7 +200,7 @@ class EventManager {
    * @method getTopObjectAt
    * @description Returns the topmost active object under a world-space point
    * along with the instance hit (if the object is an InstancedTexture). Topmost
-   * means highest z, with later scene order breaking ties — matching draw order.
+   * means highest z, with later scene order breaking ties, matching draw order.
    * @param {number} worldX - The world-space x coordinate
    * @param {number} worldY - The world-space y coordinate
    * @returns {{object: GameObject, instance: Instance|null}|null}

@@ -4,7 +4,7 @@ export default Aseprite;
  * @description Imports sprite-sheet metadata exported from Aseprite
  * (File ▸ Export Sprite Sheet, with "JSON Data" on) and turns its frame tags
  * into engine animation clips. Works with both the Hash and Array JSON layouts.
- * Pure parsing — pass it the already-parsed JSON object.
+ * Pure parsing: pass it the already-parsed JSON object.
  *
  * Assumes the sheet is a uniform grid in frame order (the common case), so the
  * frame indices line up with the engine's Texture/Animator frame numbering.
@@ -54,7 +54,7 @@ declare class Aseprite {
      * @method toClips
      * @description Builds clip descriptors from the sheet's frame tags. Each clip
      * is `{ name, frames, speed }` where `frames` are frame indices and `speed`
-     * is the average frame duration (ms) — the per-clip speed the Animator uses.
+     * is the average frame duration (ms), the per-clip speed the Animator uses.
      * If the sheet has no tags, a single "default" clip spanning all frames is
      * returned.
      * @param {Object} sheet - Parsed Aseprite JSON

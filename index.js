@@ -36,6 +36,7 @@ import ParticleEmitter from "./src/ParticleEmitter.js";
 import CollisionLayers from "./src/CollisionLayers.js";
 import TiledMap from "./src/importers/TiledMap.js";
 import Aseprite from "./src/importers/Aseprite.js";
+import ForgeLevel from "./src/importers/ForgeLevel.js";
 import RenderTarget from "./src/RenderTarget.js";
 import RenderStats from "./src/managers/RenderStats.js";
 import PostProcessor, { PostEffect } from "./src/PostProcessor.js";
@@ -43,6 +44,7 @@ import PostEffects, { BloomEffect } from "./src/PostEffects.js";
 import Material from "./src/Material.js";
 import UI from "./src/UI.js";
 import InputManager from "./src/managers/InputManager.js";
+import Gamepad from "./src/managers/Gamepad.js";
 import Particle from "./src/particlesystem/Particle.js";
 import Particles from "./src/particlesystem/Particles.js";
 import ParticleSettings from "./src/particlesystem/ParticleSettings.js";
@@ -59,6 +61,7 @@ import BoxCollider from "./src/components/BoxCollider.js";
 import BoxColliderDebug from "./src/components/BoxColliderDebug.js";
 import CircleCollider from "./src/components/CircleCollider.js";
 import CircleColliderDebug from "./src/components/CircleColliderDebug.js";
+import PolygonCollider from "./src/components/PolygonCollider.js";
 import Collider from "./src/components/Collider.js";
 import GameObject from "./src/components/GameObject.js";
 import RigidBody from "./src/components/RigidBody.js";
@@ -107,6 +110,7 @@ export {
   CollisionLayers,
   TiledMap,
   Aseprite,
+  ForgeLevel,
   RenderTarget,
   RenderStats,
   PostProcessor,
@@ -116,6 +120,7 @@ export {
   Material,
   UI,
   InputManager,
+  Gamepad,
   Particle,
   Particles,
   ParticleSettings,
@@ -132,6 +137,7 @@ export {
   BoxColliderDebug,
   CircleCollider,
   CircleColliderDebug,
+  PolygonCollider,
   Collider,
   GameObject,
   RigidBody,

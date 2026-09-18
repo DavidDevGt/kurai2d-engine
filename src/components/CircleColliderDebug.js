@@ -14,11 +14,12 @@ class CircleColliderDebug {
     this.physics = this.rigidbody.physics;
     this.scale = this.physics.getScale();
     this.color = color || new Color(255, 0, 0, 255);
+    const body = this.rigidbody.getBody();
     this.gameObject = new GameObject(
       "CircleColliderDebug",
       new Vector3(
-        this.rigidbody.getBody().getPosition().x * this.scale,
-        this.rigidbody.getBody().getPosition().y * this.scale,
+        body.getPosition().x * this.scale,
+        body.getPosition().y * this.scale,
         100
       ),
       this.rigidbody.getAngle(),

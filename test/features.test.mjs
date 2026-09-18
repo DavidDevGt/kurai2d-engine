@@ -6,30 +6,30 @@ import RigidBody from "../src/components/RigidBody.js";
 import BoxCollider from "../src/components/BoxCollider.js";
 import CollisionLayers from "../src/CollisionLayers.js";
 import InputManager from "../src/managers/InputManager.js";
+import Gamepad from "../src/managers/Gamepad.js";
 import ParticleEmitter from "../src/ParticleEmitter.js";
 import TiledMap from "../src/importers/TiledMap.js";
 import Aseprite from "../src/importers/Aseprite.js";
 
 test("CollisionLayers assigns sequential category bits", () => {
   CollisionLayers.reset();
-  // Each new name claims the next power-of-two bit.
   assert.equal(CollisionLayers.bit("ground"), 1);
   assert.equal(CollisionLayers.bit("player"), 2);
   assert.equal(CollisionLayers.bit("enemy"), 4);
-  assert.equal(CollisionLayers.bit("ground"), 1); // re-asking is stable
+  assert.equal(CollisionLayers.bit("ground"), 1);
 });
 
 test("CollisionLayers.mask ORs names and handles 'all'", () => {
   CollisionLayers.reset();
   CollisionLayers.define("ground", "player", "enemy");
-  assert.equal(CollisionLayers.mask(["ground", "enemy"]), 1 | 4); // bits ORed together
+  assert.equal(CollisionLayers.mask(["ground", "enemy"]), 1 | 4);
   assert.equal(CollisionLayers.mask("player"), 2);
   assert.equal(CollisionLayers.mask("all"), 0xffff);
-  assert.equal(CollisionLayers.mask(null), 0xffff); // no filter means collide with everything
-  assert.equal(CollisionLayers.mask(8), 8); // a raw bitmask passes through untouched
+  assert.equal(CollisionLayers.mask(null), 0xffff);
+  assert.equal(CollisionLayers.mask(8), 8);
 });
 
-test("Collider.setCategory / setCollidesWith write planck filter data", () => {
+test("Collider.setCategory / setCollidesWith write fixture filter data", () => {
   CollisionLayers.reset();
   CollisionLayers.define("ground", "player", "enemy");
   const physics = new Physics(10, 30);
@@ -45,7 +45,7 @@ test("Collider.setCategory / setCollidesWith write planck filter data", () => {
   assert.equal(col.collider.getFilterMaskBits(), 1 | 4);
 });
 
-test("RigidBody.setContinuous toggles planck bullet flag", () => {
+test("RigidBody.setContinuous toggles the body's bullet flag", () => {
   const physics = new Physics(10, 30);
   const body = new RigidBody(physics, "dynamic", new Vector2(0, 0), true);
   assert.equal(body.isContinuous(), false);
@@ -67,8 +67,6 @@ test("CCD stops a fast body from tunneling through a thin wall", () => {
 
   for (let i = 0; i < 30; i++) physics.process(1 / 60);
 
-  // The wall sits at 5m and Physics was built with 30 px/m, so 5 * 30 is the
-  // wall in world units. Without CCD the ball tunnels straight past it.
   assert.ok(
     ball.getWorldX() < 5 * 30,
     `expected body to be stopped before the wall, got x=${ball.getWorldX()}`
@@ -89,7 +87,6 @@ function makeStubEmitter(capacity = 8) {
 }
 
 test("ParticleEmitter pools and recycles particles", () => {
-  // The pool is allocated up front: capacity sprites are added immediately.
   const { fx, added } = makeStubEmitter(8);
   assert.equal(added.length, 8);
   assert.equal(fx.activeCount, 0);
@@ -97,17 +94,16 @@ test("ParticleEmitter pools and recycles particles", () => {
   fx.burst(5, { x: 0, y: 0, speed: 100, life: 1, spread: Math.PI });
   assert.equal(fx.activeCount, 5);
 
-  for (let i = 0; i < 20; i++) fx.update(0.1); // 2s elapsed, past the 1s lifetime
+  for (let i = 0; i < 20; i++) fx.update(0.1);
   assert.equal(fx.activeCount, 0);
 
-  // All 8 are available again, proving they were recycled rather than leaked.
   fx.burst(8, { x: 0, y: 0, speed: 50, life: 0.5 });
   assert.equal(fx.activeCount, 8);
 });
 
 test("ParticleEmitter never exceeds capacity", () => {
   const { fx } = makeStubEmitter(4);
-  fx.burst(100, { x: 0, y: 0, life: 5, speed: 10 }); // asking for 100 from a pool of 4
+  fx.burst(100, { x: 0, y: 0, life: 5, speed: 10 });
   assert.equal(fx.activeCount, 4);
 });
 
@@ -165,19 +161,16 @@ test("InputManager reads deadzoned analog axes", () => {
     target: fakeTarget(),
     gamepadDeadzone: 0.3,
   });
-  // Deadzone 0.3 rescales the remaining 0.3..1 range back onto 0..1, so a raw
-  // 0.8 becomes 0.5/0.7 and anything under the deadzone reads as a flat 0.
   input.gamepads = [pad([], [-0.8, 0.1, 0.5, 1.0])];
   assert.ok(Math.abs(input.getGamepadAxis(0) - -(0.5 / 0.7)) < 1e-9);
-  assert.equal(input.getGamepadAxis(1), 0); // 0.1 is inside the deadzone
+  assert.equal(input.getGamepadAxis(1), 0);
   assert.ok(Math.abs(input.getGamepadAxis(2) - 0.2 / 0.7) < 1e-9);
-  assert.equal(input.getGamepadAxis(3), 1); // full deflection still reaches exactly 1
+  assert.equal(input.getGamepadAxis(3), 1);
   input.destroy();
 });
 
 test("InputManager builds button / dpad / axis tokens", () => {
   const input = new InputManager({ target: fakeTarget() });
-  // Button 0 plus dpad-left (button 14), and a hard-left stick on axis 0.
   input.gamepads = [pad([0, 14], [-0.9, 0, 0, 0])];
   input._collectGamepadTokens();
   assert.ok(input._gamepadTokens.has("pad:0:0"));
@@ -185,13 +178,12 @@ test("InputManager builds button / dpad / axis tokens", () => {
   assert.ok(input._gamepadTokens.has("pad:0:dpadLeft"));
   assert.ok(input._gamepadTokens.has("gamepad:0"));
   assert.ok(input._gamepadTokens.has("pad:0:axis0-"));
-  assert.ok(!input._gamepadTokens.has("pad:0:axis0+")); // opposite direction must not fire
+  assert.ok(!input._gamepadTokens.has("pad:0:axis0+"));
   input.destroy();
 });
 
 test("InputManager emits semantic button names + aliases", () => {
   const input = new InputManager({ target: fakeTarget() });
-  // Standard mapping: 0 = south (A/cross), 5 = R1/RB, 9 = start.
   input.gamepads = [pad([0, 5, 9], [])];
   input._collectGamepadTokens();
   const t = input._gamepadTokens;
@@ -202,18 +194,17 @@ test("InputManager emits semantic button names + aliases", () => {
   assert.ok(t.has("pad:0:rb"));
   assert.ok(t.has("pad:0:start"));
   assert.ok(t.has("pad:0:0"));
-  assert.ok(!t.has("pad:0:north")); // button 3 was never pressed
+  assert.ok(!t.has("pad:0:north"));
   input.destroy();
 });
 
 test("InputManager getGamepadButton resolves names and stick", () => {
   const input = new InputManager({ target: fakeTarget() });
-  input.gamepads = [pad([3], [0.9, -0.4, 0, 0])]; // button 3 = north (Y/triangle)
+  input.gamepads = [pad([3], [0.9, -0.4, 0, 0])];
   assert.equal(input.getGamepadButton("north").pressed, true);
   assert.equal(input.getGamepadButton("y").pressed, true);
   assert.equal(input.getGamepadButton("south").pressed, false);
   const stick = input.getGamepadStick("left");
-  // Deadzone scaling shortens the vector but must not rotate it.
   const rawAngle = Math.atan2(-0.4, 0.9);
   assert.ok(Math.abs(Math.atan2(stick.y, stick.x) - rawAngle) < 1e-9);
   assert.ok(stick.magnitude > 0 && stick.magnitude <= 1);
@@ -226,11 +217,9 @@ test("InputManager applies a custom mapping for non-standard pads", () => {
   });
   const input = new InputManager({ target: fakeTarget() });
 
-  // A standard pad keeps the standard indices...
   input.gamepads = [pad([0], [], { mapping: "standard", id: "Xbox" })];
   assert.equal(input.getGamepadButton("south").index, 0);
 
-  // ...while the registered profile moves south to button 1 for this id.
   input.gamepads = [pad([1], [], { mapping: "", id: "WeirdPad 9000" })];
   input._collectGamepadTokens();
   assert.equal(input.getGamepadButton("south").index, 1);
@@ -254,27 +243,147 @@ test("InputManager detects gamepad justPressed edges across frames", () => {
   const input = new InputManager({ target: fakeTarget() });
   input.mapAction("jump", ["pad:0:0"]);
 
-  // Frame 1: nothing held.
   let restore = stubGamepads([pad([], [])]);
   input.update();
   assert.equal(input.justPressed("jump"), false);
   restore();
 
-  // Frame 2: freshly pressed, so isDown and justPressed both fire.
   restore = stubGamepads([pad([0], [])]);
   input.update();
   assert.equal(input.isDown("jump"), true);
   assert.equal(input.justPressed("jump"), true);
   restore();
 
-  // Frame 3: still held, so the edge is gone but isDown remains.
   restore = stubGamepads([pad([0], [])]);
   input.update();
   assert.equal(input.justPressed("jump"), false);
   assert.equal(input.isDown("jump"), true);
   restore();
 
-  // Frame 4: released, so the release edge fires once.
+  restore = stubGamepads([pad([], [])]);
+  input.update();
+  assert.equal(input.justReleased("jump"), true);
+  restore();
+  input.destroy();
+});
+
+test("getLastActiveDevice tracks the last device that produced real input", () => {
+  const input = new InputManager({ target: fakeTarget() });
+  assert.equal(input.getLastActiveDevice(), null);
+
+  input._onKeyDown({ key: "a" });
+  assert.equal(input.getLastActiveDevice(), "keyboard");
+
+  input._onMouseDown({ button: 0 });
+  assert.equal(input.getLastActiveDevice(), "mouse");
+
+  let restore = stubGamepads([pad([0], [])]);
+  input.update();
+  assert.equal(input.getLastActiveDevice(), "gamepad");
+  restore();
+
+  input._onMouseMove({ clientX: 10, clientY: 10 });
+  assert.equal(input.getLastActiveDevice(), "gamepad");
+
+  input._onTouch({ touches: [] });
+  assert.equal(input.getLastActiveDevice(), "touch");
+  input.destroy();
+});
+
+test("identifyButton resolves with the raw index of the next fresh press, ignoring an already-held button", async () => {
+  const input = new InputManager({ target: fakeTarget() });
+
+  let restore = stubGamepads([pad([2], [])]);
+  input.update();
+  restore();
+
+  const found = input.identifyButton(0);
+  let resolved = null;
+  found.then((i) => (resolved = i));
+
+  restore = stubGamepads([pad([2], [])]);
+  input.update();
+  restore();
+  assert.equal(
+    resolved,
+    null,
+    "a button already held before identifyButton() was called must not resolve it"
+  );
+
+  restore = stubGamepads([pad([2, 5], [])]);
+  input.update();
+  restore();
+  await found;
+  assert.equal(resolved, 5);
+  input.destroy();
+});
+
+test("calibrateGamepad walks a name list and returns a {name: index} map", async () => {
+  const input = new InputManager({ target: fakeTarget() });
+  const prompts = [];
+
+  const calibration = input.calibrateGamepad(
+    0,
+    ["south", "east"],
+    (name, i, total) => prompts.push([name, i, total])
+  );
+
+  await new Promise((r) => setTimeout(r, 0));
+  let restore = stubGamepads([pad([0], [])]);
+  input.update();
+  restore();
+  restore = stubGamepads([pad([], [])]);
+  input.update();
+  restore();
+
+  await new Promise((r) => setTimeout(r, 0));
+  restore = stubGamepads([pad([1], [])]);
+  input.update();
+  restore();
+
+  const mapping = await calibration;
+  assert.deepEqual(mapping, { south: 0, east: 1 });
+  assert.deepEqual(prompts, [
+    ["south", 0, 2],
+    ["east", 1, 2],
+  ]);
+  input.destroy();
+});
+
+test("Gamepad builds the same token strings InputManager expects", () => {
+  const pad0 = Gamepad.get(0);
+  assert.equal(pad0.key(Gamepad.SOUTH), "pad:0:south");
+  assert.equal(pad0.key(Gamepad.DPAD_LEFT), "pad:0:dpadLeft");
+  assert.equal(pad0.key(Gamepad.LEFT_STICK_UP), "pad:0:leftStickUp");
+  assert.equal(pad0.button(3), "pad:0:3");
+  assert.equal(pad0.axis(1, "-"), "pad:0:axis1-");
+  assert.equal(pad0.axis(1), "pad:0:axis1+");
+
+  assert.equal(Gamepad.get(1).key(Gamepad.SOUTH), "pad:1:south");
+});
+
+test("Gamepad.get caches one instance per pad index", () => {
+  assert.equal(Gamepad.get(0), Gamepad.get(0));
+  assert.notEqual(Gamepad.get(0), Gamepad.get(1));
+});
+
+test("Gamepad-built tokens drive InputManager exactly like hand-written ones", () => {
+  const input = new InputManager({ target: fakeTarget() });
+  input.mapAction("jump", [Gamepad.get(0).key(Gamepad.SOUTH)]);
+  input.mapAction("left", [Gamepad.get(0).key(Gamepad.DPAD_LEFT)]);
+
+  let restore = stubGamepads([pad([], [])]);
+  input.update();
+  assert.equal(input.justPressed("jump"), false);
+  restore();
+
+  restore = stubGamepads([pad([0, 14], [])]);
+  input.update();
+  assert.equal(input.isDown("jump"), true);
+  assert.equal(input.justPressed("jump"), true);
+  assert.equal(input.isDown("left"), true);
+  restore();
+
   restore = stubGamepads([pad([], [])]);
   input.update();
   assert.equal(input.justReleased("jump"), true);
@@ -318,8 +427,6 @@ const TILED_MAP = {
 };
 
 test("TiledMap.toFrameGrid converts gids to local frame indices", () => {
-  // gid 0 means empty (-1); other gids drop the firstgid offset, and the
-  // 0x80000000 flip flag is stripped before that subtraction.
   const grid = TiledMap.toFrameGrid(TILED_MAP);
   assert.deepEqual(grid[0], [0, -1, 2]);
   assert.deepEqual(grid[1], [1, 1, 3]);
@@ -332,7 +439,7 @@ test("TiledMap.objects flattens properties and can flip y", () => {
   assert.equal(raw[0].y, 32);
 
   const flipped = TiledMap.objects(TILED_MAP, { layer: "spawns", flipY: true });
-  assert.equal(flipped[0].y, 0); // map is 2 * 16 = 32 tall, so y 32 flips to 0
+  assert.equal(flipped[0].y, 0);
 });
 
 const ASE_SHEET = {
@@ -352,7 +459,6 @@ const ASE_SHEET = {
 };
 
 test("Aseprite.spriteConfig derives a uniform grid", () => {
-  // A 48x32 sheet of 16x16 frames is a 3-wide grid holding 4 frames.
   const cfg = Aseprite.spriteConfig(ASE_SHEET);
   assert.equal(cfg.frameWidth, 16);
   assert.equal(cfg.frameHeight, 16);
@@ -366,8 +472,8 @@ test("Aseprite.toClips builds frame ranges with direction + speed", () => {
   const run = clips.find((c) => c.name === "run");
   assert.deepEqual(idle.frames, [0, 1]);
   assert.equal(idle.speed, 100);
-  assert.deepEqual(run.frames, [3, 2]); // tagged "reverse", so the range runs backwards
-  assert.equal(run.speed, 80); // speed comes from the frames' duration
+  assert.deepEqual(run.frames, [3, 2]);
+  assert.equal(run.speed, 80);
 });
 
 test("Aseprite.applyTo registers clips on an animator-like object", () => {
@@ -407,16 +513,15 @@ test("AudioManager routes volume through master * bus * sound", async () => {
   am.add("a.mp3", "music", { volume: 0.5, bus: "music" });
   const sound = am.getSound("music");
 
-  // master * bus * per-sound volume.
   assert.equal(am._effectiveVolume(sound), 1 * 1 * 0.5);
   am.setBusVolume("music", 0.4);
-  assert.ok(Math.abs(am._effectiveVolume(sound) - 0.2) < 1e-9); // 1 * 0.4 * 0.5
+  assert.ok(Math.abs(am._effectiveVolume(sound) - 0.2) < 1e-9);
   assert.ok(
     Math.abs(sound.audio.volume - 0.2) < 1e-9,
     "live element retargeted"
   );
   am.setMasterVolume(0.5);
-  assert.ok(Math.abs(am._effectiveVolume(sound) - 0.1) < 1e-9); // 0.5 * 0.4 * 0.5
+  assert.ok(Math.abs(am._effectiveVolume(sound) - 0.1) < 1e-9);
 });
 
 test("AudioManager.fadeTo ramps the fade multiplier over time", async () => {
@@ -428,7 +533,6 @@ test("AudioManager.fadeTo ramps the fade multiplier over time", async () => {
   const sound = am.getSound("track");
   sound._fadeMul = 0;
 
-  // 1s into a 2s fade from 0 to 1.
   am.fadeTo("track", 1, 2);
   am.update(1);
   assert.ok(Math.abs(sound._fadeMul - 0.5) < 1e-9, "halfway");
@@ -477,10 +581,9 @@ test("Storage.load migrates older versions and rewrites", async () => {
 test("Storage.load recovers from backup when primary is corrupt", async () => {
   globalThis.localStorage = mockLocalStorage();
   const { default: Storage } = await import("../src/Storage.js");
-  // The second save pushes the first value into the backup slot.
   Storage.save("s", { a: 1 }, { version: 1 });
   Storage.save("s", { a: 2 }, { version: 1 });
-  globalThis.localStorage.setItem("s", "{not valid json"); // corrupt the primary
+  globalThis.localStorage.setItem("s", "{not valid json");
   assert.deepEqual(Storage.load("s", { version: 1 }), { a: 1 });
 });
 
@@ -492,21 +595,17 @@ test("Storage.load returns fallback for missing key", async () => {
 
 test("CanvasText.wrapText honors newlines and wrap width", async () => {
   const { default: CanvasText } = await import("../src/CanvasText.js");
-  // Stub metrics: every character is 10 units wide.
   const measure = (s) => s.length * 10;
 
-  assert.deepEqual(CanvasText.wrapText(measure, "a b c", 0), ["a b c"]); // width 0 disables wrapping
+  assert.deepEqual(CanvasText.wrapText(measure, "a b c", 0), ["a b c"]);
   assert.deepEqual(CanvasText.wrapText(measure, "a\nb", 0), ["a", "b"]);
 
-  // Each word measures 50 or less, so one word fits per 50-wide line.
   assert.deepEqual(CanvasText.wrapText(measure, "hello world foo", 50), [
     "hello",
     "world",
     "foo",
   ]);
 
-  // A single word wider than the limit still gets its own line rather than
-  // being broken mid-word.
   assert.deepEqual(CanvasText.wrapText(measure, "tiny enormousword", 50), [
     "tiny",
     "enormousword",
@@ -527,17 +626,14 @@ test("TextureManager retain/release refcounts and drops cache at zero", async ()
   TextureManager.retain(path, true);
   assert.equal(TextureManager.refCount(path, true), 2);
 
-  // One release leaves a live reference, so the cache entry survives.
   TextureManager.release(path, true);
   assert.equal(TextureManager.refCount(path, true), 1);
   assert.equal(TextureManager.has(path, true), true);
 
-  // Dropping the last reference evicts it.
   TextureManager.release(path, true);
   assert.equal(TextureManager.refCount(path, true), 0);
   assert.equal(TextureManager.has(path, true), false);
 
-  // Releasing something never retained must not go negative or throw.
   TextureManager.release("test://never.png", true);
   assert.equal(TextureManager.refCount("test://never.png", true), 0);
 });
@@ -554,8 +650,6 @@ function fakePad(overrides = {}) {
 
 test("getGamepadAxis rescales past the deadzone (no jump, full range)", () => {
   const input = new InputManager({ target: null, gamepadDeadzone: 0.25 });
-  // Deadzone 0.25: 0.2 and 0.25 read as 0, and 0.625 lands exactly halfway
-  // through the remaining 0.25..1 band.
   input.gamepads = [fakePad({ axes: [0.2, 0.25, 0.625, 1.0] })];
   assert.equal(input.getGamepadAxis(0), 0);
   assert.equal(input.getGamepadAxis(1), 0);
@@ -565,8 +659,6 @@ test("getGamepadAxis rescales past the deadzone (no jump, full range)", () => {
 
 test("getGamepadStick uses a radial deadzone and preserves direction", () => {
   const input = new InputManager({ target: null, gamepadDeadzone: 0.3 });
-  // Each axis is under the 0.3 deadzone, but the diagonal magnitude is ~0.396,
-  // so a radial deadzone must let it through.
   input.gamepads = [fakePad({ axes: [0.28, 0.28, 0, 0] })];
   const stick = input.getGamepadStick("left");
   assert.ok(
@@ -575,7 +667,6 @@ test("getGamepadStick uses a radial deadzone and preserves direction", () => {
   );
   assert.ok(Math.abs(stick.x - stick.y) < 1e-9, "direction preserved");
 
-  // Full deflection still normalizes to exactly 1.
   input.gamepads = [fakePad({ axes: [1, 0, 0, 0] })];
   assert.ok(Math.abs(input.getGamepadStick("left").magnitude - 1) < 1e-9);
 
@@ -591,8 +682,6 @@ test("stick direction tokens fire past the press threshold", () => {
     gamepadDeadzone: 0.2,
     stickPressThreshold: 0.5,
   });
-  // Left stick hard up (0.9) clears the 0.5 press threshold; right stick at
-  // 0.3 does not.
   input.gamepads = [fakePad({ axes: [0, -0.9, 0.3, 0] })];
   const tokens = input._collectGamepadTokens();
   assert.ok(tokens.has("pad:0:leftStickUp"), "hard up must register");
@@ -610,13 +699,11 @@ test("built-in DirectInput profile remaps buttons for known pads", () => {
       pressed: i === idx,
       value: i === idx ? 1 : 0,
     }));
-  // On this DirectInput pad button 1 is south...
   input.gamepads = [
     fakePad({ id: "Logitech Dual Action", mapping: "", buttons: pressed(1) }),
   ];
   assert.equal(input.getGamepadButton("south").pressed, true);
   assert.equal(input.getGamepadButton("west").pressed, false);
-  // ...but on a standard pad the same index is east.
   input.gamepads = [fakePad({ buttons: pressed(1) })];
   assert.equal(input.getGamepadButton("east").pressed, true);
 });
@@ -639,8 +726,6 @@ test("EmeraldDB resolves envelopes: exact version, migration, fallback", async (
     migrated: true,
   });
 
-  // Older version with no migrate function: fall back rather than hand back
-  // data the caller cannot read.
   const refused = EmeraldDB._resolveEnvelope(
     { v: 1, t: 1, data: { x: 1 } },
     { version: 2, fallback: "F" }
@@ -655,11 +740,9 @@ test("EmeraldDB resolves envelopes: exact version, migration, fallback", async (
 
 test("EmeraldDB wraps plain pre-versioning values as version 0", async () => {
   const { default: EmeraldDB } = await import("../src/EmeraldDB.js");
-  // A bare value predates versioning, so it is treated as version 0.
   const env = EmeraldDB._asEnvelope({ legacy: true });
   assert.equal(env.v, 0);
   assert.deepEqual(env.data, { legacy: true });
-  // An already-shaped envelope is returned as-is.
   const real = { v: 3, t: 9, data: 1 };
   assert.equal(EmeraldDB._asEnvelope(real), real);
   assert.equal(EmeraldDB._asEnvelope(undefined), null);

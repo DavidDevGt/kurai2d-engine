@@ -1,7 +1,7 @@
 export default EmeraldDB;
 /**
  * @class EmeraldDB
- * @description Async game-save storage on IndexedDB — the big-world companion
+ * @description Async game-save storage on IndexedDB, the big-world companion
  * to `Storage` (localStorage). Same versioned-envelope semantics (`{v,t,data}`
  * with a `.bak` backup and forward migration), but with no ~5MB quota and no
  * JSON round-trip: values are structured-cloned, so large nested world state
@@ -56,7 +56,7 @@ declare class EmeraldDB {
     private static _tx;
     /**
      * @method set
-     * @description Stores a value under a key (structured clone — objects, Maps,
+     * @description Stores a value under a key (structured clone: objects, Maps,
      * Sets, typed arrays all survive).
      * @param {string} key
      * @param {*} value

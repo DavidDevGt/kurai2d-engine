@@ -1,12 +1,12 @@
 const STANDARD_VERTEX_SHADER = `
   attribute vec4 aVertexPosition;
   attribute vec2 aTextureCoord;
-  
+
   attribute vec4 aInstanceMatrix0;
   attribute vec4 aInstanceMatrix1;
   attribute vec4 aInstanceMatrix2;
   attribute vec4 aInstanceMatrix3;
-  
+
   attribute vec2 aInstanceTexCoord0;
   attribute vec2 aInstanceTexCoord1;
   attribute vec2 aInstanceTexCoord2;
@@ -30,14 +30,14 @@ const STANDARD_VERTEX_SHADER = `
       aInstanceMatrix2,
       aInstanceMatrix3
     );
-    
+
     if(useInstances) {
         gl_Position = uProjectionMatrix * uInstancedModelViewMatrix * instanceMatrix * aVertexPosition;
         vFragPos = (uInstancedModelViewMatrix * instanceMatrix * aVertexPosition).xy;
         vInstanceColor = aInstanceColor;
 
         int vertexIndex = int(aVertexPosition.x > 0.0 ? (aVertexPosition.y > 0.0 ? 0 : 2) : (aVertexPosition.y > 0.0 ? 1 : 3));
-        
+
         if(vertexIndex == 0) {
             vTexCoord = aInstanceTexCoord0;
         } else if(vertexIndex == 1) {
@@ -70,14 +70,14 @@ const STANDARD_FRAGMENT_SHADER = `
     uniform float uLightIntensity[4];
     uniform float uLightRadius[4];
     uniform int uActiveLights;
-    
+
     uniform vec2 uDirLightPosition[4];
     uniform vec2 uDirLightDirection[4];
     uniform vec3 uDirLightColor[4];
     uniform float uDirLightIntensity[4];
     uniform float uDirLightWidth[4];
     uniform int uActiveDirLights;
-    
+
     uniform vec3 uAmbientLightValues;
     uniform bool uUseLighting;
 
@@ -98,44 +98,44 @@ const STANDARD_FRAGMENT_SHADER = `
         }
 
         texColor *= vInstanceColor;
-        
+
         vec3 lighting = ambientLight.rgb;
-        
+
         for(int i = 0; i < 4; i++) {
             if(i >= uActiveLights) break;
-            
+
             float distance = length(uLightPosition[i] - vFragPos);
-            
+
             if(distance < uLightRadius[i]) {
                 float attenuation = 1.0 - distance / uLightRadius[i];
-                
+
                 lighting += uLightColor[i] * attenuation * uLightIntensity[i];
             }
         }
-        
+
         for(int i = 0; i < 4; i++) {
             if(i >= uActiveDirLights) break;
-            
+
             vec2 lightPos = uDirLightPosition[i];
             vec2 lightDir = normalize(uDirLightDirection[i]);
             vec2 toFrag = vFragPos - lightPos;
-            
+
             float projection = dot(toFrag, lightDir);
             if(projection < 0.0) continue;
-            
+
             float perpDistance = abs(dot(toFrag, vec2(-lightDir.y, lightDir.x)));
-            
+
             if(perpDistance > uDirLightWidth[i] * 0.5) continue;
-            
+
             float widthFactor = 1.0 - (perpDistance / (uDirLightWidth[i] * 0.5));
-            
+
             float distance = length(toFrag);
             float maxDistance = 1000.0;
             float distanceFactor = max(0.0, 1.0 - (distance / maxDistance));
-            
+
             lighting += uDirLightColor[i] * uDirLightIntensity[i] * widthFactor * distanceFactor;
         }
-        
+
         vec4 outColor;
         if (uUseLighting) {
             outColor = vec4(texColor.rgb * lighting, texColor.a);

@@ -27,7 +27,7 @@ declare class Scene {
      * @method dispose
      * @description Destroys every object in the scene (freeing their GPU
      * resources and physics bodies) and empties it. Call when a level/screen is
-     * torn down for good — removing objects without disposing leaks GL buffers
+     * torn down for good; removing objects without disposing leaks GL buffers
      * over repeated scene swaps.
      */
     dispose(): void;

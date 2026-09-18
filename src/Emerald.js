@@ -215,7 +215,7 @@ class Emerald {
       e.preventDefault();
       this._contextLost = true;
       console.warn(
-        "[Emerald] > WebGL context lost — rendering paused until restore."
+        "[Emerald] > WebGL context lost, rendering paused until restore."
       );
       for (const h of this._contextLostHandlers) h();
     };

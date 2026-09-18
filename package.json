@@ -37,8 +37,7 @@
     "physics"
   ],
   "dependencies": {
-    "gl-matrix": "^3.4.3",
-    "planck": "^1.4.2"
+    "gl-matrix": "^3.4.3"
   },
   "peerDependencies": {
     "colyseus.js": "^0.16.16"

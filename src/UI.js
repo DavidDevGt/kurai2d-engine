@@ -297,7 +297,7 @@ class UI {
 
   /**
    * @method isOver
-   * @description Whether an interactive element is under the given page point —
+   * @description Whether an interactive element is under the given page point,
    * useful to suppress game clicks behind the UI.
    */
   isOver(clientX, clientY) {

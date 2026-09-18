@@ -1,13 +1,13 @@
 /**
  * @class CollisionLayers
  * @description A small registry that maps human-readable layer names to the
- * category bits planck uses for collision filtering, so games can say
+ * category bits the physics engine uses for collision filtering, so games can
  * "players collide with ground and enemies, but not with each other" without
  * juggling raw bitmasks.
  *
  * Two fixtures collide only if each one's category is in the other's mask, so
  * filtering is symmetric by construction. Up to 16 distinct layers are
- * supported (planck filter bits are 16-bit).
+ * supported (filter bits are 16-bit).
  *
  * @example
  * CollisionLayers.define("ground", "player", "enemy", "pickup");
@@ -44,7 +44,7 @@ class CollisionLayers {
     if (CollisionLayers._bits.has(name)) return CollisionLayers._bits.get(name);
     if (CollisionLayers._next > 15) {
       throw new Error(
-        "[CollisionLayers] Exceeded 16 collision layers (planck filter limit)."
+        "[CollisionLayers] Exceeded 16 collision layers (filter bit limit)."
       );
     }
     const bit = 1 << CollisionLayers._next++;

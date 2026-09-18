@@ -93,6 +93,8 @@ class InstancedTexture extends Drawable {
     this.static = false;
     /** @private */
     this._matricesDirty = true;
+    /** The animation every instance starts with; set by playAnimation/playAnimationOnce. @private */
+    this._defaultAnimation = null;
   }
 
   /**
@@ -127,6 +129,11 @@ class InstancedTexture extends Drawable {
     if (this.instances.length < this.instanceCount) {
       this.instances.push(instance);
       instance.setParent(this);
+      if (this._defaultAnimation) {
+        const { frames, speed, once } = this._defaultAnimation;
+        if (once) instance.playAnimationOnce(frames, speed);
+        else instance.playAnimation(frames, speed);
+      }
       this._matricesDirty = true;
     } else {
       console.warn("Max instance count reached.");
@@ -962,31 +969,72 @@ class InstancedTexture extends Drawable {
 
   /**
    * @method playAnimation
-   * @description Plays an animation
+   * @description Plays the same looping animation, in lockstep, on every
+   * instance: the current ones immediately, and any added later via
+   * {@link InstancedTexture#addInstance}. For giving individual instances
+   * their own independent animation instead, use
+   * {@link InstancedTexture#animateInstance}.
    * @param {Array} frames - The frames to play
-   * @param {number} speed - The speed of the animation
+   * @param {number} [speed=1000] - Milliseconds per frame
    */
   playAnimation(frames, speed = 1000) {
-    console.warn("playAnimation is not implemented for InstancedTexture");
+    if (!frames || frames.length === 0) {
+      console.error(
+        "[InstancedTexture] playAnimation: frames cannot be empty!"
+      );
+      return;
+    }
+    this._defaultAnimation = { frames, speed, once: false };
+    for (const instance of this.instances)
+      instance.playAnimation(frames, speed);
   }
 
   /**
    * @method playAnimationOnce
-   * @description Plays an animation once
+   * @description Plays the same animation once, in lockstep, on every
+   * instance, then holds each on its last frame: the current instances
+   * immediately, and any added later via {@link InstancedTexture#addInstance}.
    * @param {Array} frames - The frames to play
-   * @param {number} speed - The speed of the animation
+   * @param {number} [speed=1000] - Milliseconds per frame
    */
   playAnimationOnce(frames, speed = 1000) {
-    console.warn("playAnimationOnce is not implemented for InstancedTexture");
+    if (!frames || frames.length === 0) {
+      console.error(
+        "[InstancedTexture] playAnimationOnce: frames cannot be empty!"
+      );
+      return;
+    }
+    this._defaultAnimation = { frames, speed, once: true };
+    for (const instance of this.instances) {
+      instance.playAnimationOnce(frames, speed);
+    }
+  }
+
+  /**
+   * @method stopAnimation
+   * @description Stops the shared animation started by playAnimation/
+   * playAnimationOnce on every current instance, and clears it so instances
+   * added afterwards no longer start playing it either. Instances animated
+   * individually via {@link InstancedTexture#animateInstance} are unaffected
+   * unless you stop them the same way, through {@link InstancedTexture#stopInstanceAnimation}.
+   * @param {boolean} [revertToOriginal=false] - Whether to reset each
+   *   instance back to the frame it had before playAnimation was called
+   */
+  stopAnimation(revertToOriginal = false) {
+    this._defaultAnimation = null;
+    for (const instance of this.instances) {
+      instance.stopAnimation(revertToOriginal);
+    }
   }
 
   /**
    * @method getAnimation
-   * @description Gets the animation
-   * @returns {Array} - The animation
+   * @description Returns the frames of the shared animation set by
+   * playAnimation/playAnimationOnce, or an empty array if none is playing.
+   * @returns {Array} - The animation frames
    */
   getAnimation() {
-    console.warn("getAnimation is not implemented for InstancedTexture");
+    return this._defaultAnimation ? this._defaultAnimation.frames : [];
   }
 }
 

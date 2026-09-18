@@ -102,7 +102,7 @@ class TextureManager {
    * @method restoreAll
    * @description Re-uploads every cached texture after a WebGL context loss.
    * The image cache survives the loss, so this is upload-only (no network).
-   * Reference counts are untouched — they track logical ownership by
+   * Reference counts are untouched: they track logical ownership by
    * drawables, which still exist.
    */
   static restoreAll() {

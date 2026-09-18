@@ -2,7 +2,8 @@
  * @class MathUtils
  * @description Common math helpers for games: interpolation, clamping, angle
  * conversion, random ranges, and lightweight 2D vector operations that work on
- * any `{ x, y }` object (including planck Vec2 and Emerald Vector2).
+ * any `{ x, y }` object (including the physics engine's Vec2 and Emerald
+ * Vector2).
  */
 class MathUtils {
   /**

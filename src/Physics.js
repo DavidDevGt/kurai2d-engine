@@ -1,4 +1,4 @@
-import * as planck from "planck";
+import { World, Box, Vec2 as PhysicsVec2 } from "./physics/index.js";
 
 /**
  * @function dispatchCollision
@@ -23,48 +23,75 @@ function dispatchCollision(object, other, contact, type) {
 
 /**
  * @class Physics
- * @description Represents the physics engine
+ * @description The game-facing front end of Emerald's own rigid-body engine
+ * (see `src/physics`). It owns the {@link World}, converts between world
+ * (pixel) units and physics units via `scale`, steps the simulation on a fixed
+ * timestep, and routes contacts to `onCollisionEnter`/`onCollisionExit` on your
+ * objects and {@link Behaviour} components.
  * @param {number} gravity - The gravity of the physics engine
- * @param {number} scale - The scale of the physics engine
- * @param {number} velocityThreshold - The velocity threshold of the physics engine
+ * @param {number} scale - Pixels per physics unit (meter)
+ * @param {number} velocityThreshold - Relative speed below which impacts stop
+ *   bouncing, which is what lets resting bodies settle instead of jittering
  */
 class Physics {
   constructor(gravity, scale, velocityThreshold = 0.1) {
-    this.world = new planck.World({
-      gravity: new planck.Vec2(0, gravity),
+    this.world = new World({
+      gravity: new PhysicsVec2(0, gravity),
+      velocityThreshold,
     });
-    planck.Settings.velocityThreshold = velocityThreshold;
     this.gravity = gravity;
     this.scale = scale;
 
     this.fixedTimeStep = 1 / 60;
     this.maxSubSteps = 5;
+    /** Largest slice the variable mode will simulate in one step. */
+    this.maxTimeStep = 1 / 30;
+    /** "fixed" or "variable", see {@link Physics#setVariableTimeStep}. */
+    this.timeStepMode = "fixed";
+    /** Steps taken by the last process() call. */
+    this.lastStepCount = 0;
     /** @private */
     this._accumulator = 0;
+    /** World-level listeners added via onCollisionEnter. @private */
+    this._enterCallbacks = [];
+    /** World-level listeners added via onCollisionExit. @private */
+    this._exitCallbacks = [];
 
     this._dispatchContacts();
   }
 
   /**
    * @method _dispatchContacts
-   * @description Routes planck contacts to the owning objects so Behaviour
-   * components receive onCollisionEnter/onCollisionExit. Bodies created through
-   * RigidBody carry the owner via userData.
+   * @description Binds contact routing to the current world: owning objects (so
+   * Behaviour components receive onCollisionEnter/onCollisionExit) first, then
+   * any world-level listeners. Bodies created through RigidBody carry the owner
+   * via userData. Re-run whenever the world is replaced, so subscriptions
+   * survive a clear().
    * @private
    */
   _dispatchContacts() {
-    const fire = (contact, type) => {
-      const a = contact.getFixtureA().getBody().getUserData();
-      const b = contact.getFixtureB().getBody().getUserData();
+    const fire = (contact, type, callbacks) => {
+      const fixtureA = contact.getFixtureA();
+      const fixtureB = contact.getFixtureB();
+      const bodyA = fixtureA.getBody();
+      const bodyB = fixtureB.getBody();
+
+      const a = bodyA.getUserData();
+      const b = bodyB.getUserData();
       const objA = a && a.parentObject ? a.parentObject : null;
       const objB = b && b.parentObject ? b.parentObject : null;
       dispatchCollision(objA, objB, contact, type);
       dispatchCollision(objB, objA, contact, type);
+
+      for (const callback of callbacks) callback(bodyA, bodyB, contact);
     };
+
     this.world.on("begin-contact", (contact) =>
-      fire(contact, "onCollisionEnter")
+      fire(contact, "onCollisionEnter", this._enterCallbacks)
     );
-    this.world.on("end-contact", (contact) => fire(contact, "onCollisionExit"));
+    this.world.on("end-contact", (contact) =>
+      fire(contact, "onCollisionExit", this._exitCallbacks)
+    );
   }
 
   /**
@@ -80,8 +107,8 @@ class Physics {
     const len = Math.hypot(direction.x, direction.y) || 1;
     const dx = direction.x / len;
     const dy = direction.y / len;
-    const p1 = new planck.Vec2(origin.x / scale, origin.y / scale);
-    const p2 = new planck.Vec2(
+    const p1 = new PhysicsVec2(origin.x / scale, origin.y / scale);
+    const p2 = new PhysicsVec2(
       (origin.x + dx * maxDistance) / scale,
       (origin.y + dy * maxDistance) / scale
     );
@@ -108,29 +135,84 @@ class Physics {
    * @returns {Array} - Owning objects at the point
    */
   queryPoint(point) {
-    const p = new planck.Vec2(point.x / this.scale, point.y / this.scale);
+    const p = new PhysicsVec2(point.x / this.scale, point.y / this.scale);
     const results = [];
-    for (let body = this.world.getBodyList(); body; body = body.getNext()) {
-      for (let f = body.getFixtureList(); f; f = f.getNext()) {
-        if (f.testPoint(p)) {
-          const rb = body.getUserData();
-          if (rb && rb.parentObject) results.push(rb.parentObject);
-          break;
-        }
-      }
-    }
+    const seen = new Set();
+    this.world.queryPoint(p, (fixture) => {
+      const body = fixture.getBody();
+      if (seen.has(body)) return true;
+      seen.add(body);
+      const rb = body.getUserData();
+      if (rb && rb.parentObject) results.push(rb.parentObject);
+      return true;
+    });
     return results;
   }
 
   /**
    * @method setFixedTimeStep
-   * @description Sets the fixed physics step (seconds) and optional substep cap.
+   * @description Runs the simulation in constant-size slices, independent of
+   * the frame rate: `process()` banks the elapsed time and steps as many whole
+   * slices as fit. This is the default and the safe choice: the same inputs
+   * produce the same result on every machine, and a slow frame can't destabilise
+   * the solver.
+   *
+   * The cost is that motion updates at the step rate, not the display rate. On
+   * a 120Hz screen with a 1/60 step, every simulated position is shown for two
+   * frames, so anything that moves in the render frame (a smoothly lerped
+   * camera, for instance) will slide against sprites that only move every other
+   * frame. Either drive those from the same fixed step, or use
+   * {@link Physics#setVariableTimeStep}.
+   *
    * @param {number} step - Fixed step in seconds (e.g. 1/60)
    * @param {number} [maxSubSteps] - Max steps per process() call (spiral guard)
+   * @returns {Physics} - this
    */
   setFixedTimeStep(step, maxSubSteps = this.maxSubSteps) {
     if (step > 0) this.fixedTimeStep = step;
     this.maxSubSteps = maxSubSteps;
+    this.timeStepMode = "fixed";
+    return this;
+  }
+
+  /**
+   * @method setVariableTimeStep
+   * @description Advances the simulation once per `process()` call using the
+   * frame's own delta, so physics runs at exactly the rendering rate. Every
+   * rendered frame then shows a freshly simulated position, which is what
+   * removes the stepping you otherwise see when the display refreshes faster
+   * than the simulation.
+   *
+   * The trade-offs are real and worth knowing:
+   * - **Not deterministic.** Results depend on the frame timings the machine
+   *   happened to produce, so replays and lockstep networking need fixed steps.
+   * - **Solver accuracy tracks the frame rate.** Contacts are resolved
+   *   iteratively, so a long frame is a coarser solve; deep stacks and fast
+   *   bodies are more forgiving under a fixed step.
+   *
+   * A frame longer than `maxStep` is split into several equal steps rather than
+   * simulated in one lump, up to `maxSubSteps`; beyond that the excess time is
+   * dropped instead of letting the world explode or spiral.
+   *
+   * @param {number} [maxStep=1/30] - Longest slice to simulate in one step
+   * @param {number} [maxSubSteps] - Max steps per process() call
+   * @returns {Physics} - this
+   */
+  setVariableTimeStep(maxStep = 1 / 30, maxSubSteps = this.maxSubSteps) {
+    if (maxStep > 0) this.maxTimeStep = maxStep;
+    this.maxSubSteps = maxSubSteps;
+    this.timeStepMode = "variable";
+    this._accumulator = 0;
+    return this;
+  }
+
+  /**
+   * @method getTimeStepMode
+   * @description Returns "fixed" or "variable".
+   * @returns {string}
+   */
+  getTimeStepMode() {
+    return this.timeStepMode;
   }
 
   /**
@@ -158,7 +240,7 @@ class Physics {
   ) {
     const bodyRef = this.world.createBody({
       type: type,
-      position: new planck.Vec2(
+      position: new PhysicsVec2(
         position.x / this.scale,
         position.y / this.scale
       ),
@@ -166,7 +248,7 @@ class Physics {
     });
 
     if (attachFixture) {
-      bodyRef.createFixture(new planck.Box(fixtureSize.x, fixtureSize.y), {
+      bodyRef.createFixture(Box(fixtureSize.x, fixtureSize.y), {
         density: density,
         friction: friction,
         restitution: restitution,
@@ -177,47 +259,158 @@ class Physics {
   }
 
   /**
+   * @method createDistanceJoint
+   * @description Connects two rigid bodies with a fixed-length rod between two
+   * world-space anchor points, or a damped spring toward that length when
+   * `frequencyHz` is set.
+   * @param {RigidBody} rigidBodyA
+   * @param {RigidBody} rigidBodyB
+   * @param {Object} [options] - `{ anchorA, anchorB, length, frequencyHz,
+   *   dampingRatio, collideConnected }`. `anchorA`/`anchorB` are world-space
+   *   pixel points; each defaults to its body's own center. `length` is in
+   *   pixels; it defaults to the current distance between the anchors.
+   * @returns {DistanceJoint}
+   */
+  createDistanceJoint(rigidBodyA, rigidBodyB, options = {}) {
+    const bodyA = rigidBodyA.body;
+    const bodyB = rigidBodyB.body;
+    const scale = this.scale;
+    const anchorA = options.anchorA
+      ? new PhysicsVec2(options.anchorA.x / scale, options.anchorA.y / scale)
+      : bodyA.getWorldCenter();
+    const anchorB = options.anchorB
+      ? new PhysicsVec2(options.anchorB.x / scale, options.anchorB.y / scale)
+      : bodyB.getWorldCenter();
+    const length =
+      options.length != null
+        ? options.length / scale
+        : Math.hypot(anchorB.x - anchorA.x, anchorB.y - anchorA.y);
+
+    return this.world.createJoint({
+      type: "distance",
+      bodyA,
+      bodyB,
+      localAnchorA: bodyA.getLocalPoint(anchorA),
+      localAnchorB: bodyB.getLocalPoint(anchorB),
+      length,
+      frequencyHz: options.frequencyHz,
+      dampingRatio: options.dampingRatio,
+      collideConnected: options.collideConnected,
+    });
+  }
+
+  /**
+   * @method createRevoluteJoint
+   * @description Pins two rigid bodies together at a shared world-space point,
+   * like a hinge: a door, a pendulum arm, a see-saw. Set `enableMotor` to
+   * drive it toward a target angular speed instead of swinging freely.
+   * @param {RigidBody} rigidBodyA
+   * @param {RigidBody} rigidBodyB
+   * @param {Object} anchor - World-space pixel point both bodies pin to
+   * @param {Object} [options] - `{ enableMotor, motorSpeed, maxMotorTorque,
+   *   collideConnected }`
+   * @returns {RevoluteJoint}
+   */
+  createRevoluteJoint(rigidBodyA, rigidBodyB, anchor, options = {}) {
+    const bodyA = rigidBodyA.body;
+    const bodyB = rigidBodyB.body;
+    const worldAnchor = new PhysicsVec2(
+      anchor.x / this.scale,
+      anchor.y / this.scale
+    );
+
+    return this.world.createJoint({
+      type: "revolute",
+      bodyA,
+      bodyB,
+      localAnchorA: bodyA.getLocalPoint(worldAnchor),
+      localAnchorB: bodyB.getLocalPoint(worldAnchor),
+      enableMotor: options.enableMotor,
+      motorSpeed: options.motorSpeed,
+      maxMotorTorque: options.maxMotorTorque,
+      collideConnected: options.collideConnected,
+    });
+  }
+
+  /**
+   * @method destroyJoint
+   * @description Removes a joint created by {@link Physics#createDistanceJoint}
+   * or {@link Physics#createRevoluteJoint}.
+   * @param {Joint} joint
+   */
+  destroyJoint(joint) {
+    this.world.destroyJoint(joint);
+  }
+
+  /**
    * @method onCollisionEnter
-   * @description Handles the collision enter event
-   * @param {Function} callback - The callback function to handle the collision enter event
+   * @description Registers a world-level listener called whenever any two
+   * fixtures start touching. Survives {@link Physics#clear}.
+   * @param {Function} callback - Called with (bodyA, bodyB, contact)
    */
   onCollisionEnter(callback) {
-    this.world.on("begin-contact", (contact) => {
-      const fixtureA = contact.getFixtureA();
-      const fixtureB = contact.getFixtureB();
-
-      const bodyA = fixtureA.getBody();
-      const bodyB = fixtureB.getBody();
-
-      callback(bodyA, bodyB, contact);
-    });
+    if (typeof callback === "function") this._enterCallbacks.push(callback);
   }
 
   /**
    * @method onCollisionExit
-   * @description Handles the collision exit event
-   * @param {Function} callback - The callback function to handle the collision exit event
+   * @description Registers a world-level listener called whenever any two
+   * fixtures stop touching. Survives {@link Physics#clear}.
+   * @param {Function} callback - Called with (bodyA, bodyB, contact)
    */
   onCollisionExit(callback) {
-    this.world.on("end-contact", (contact) => {
-      const fixtureA = contact.getFixtureA();
-      const fixtureB = contact.getFixtureB();
-
-      const bodyA = fixtureA.getBody();
-      const bodyB = fixtureB.getBody();
-
-      callback(bodyA, bodyB, contact);
-    });
+    if (typeof callback === "function") this._exitCallbacks.push(callback);
   }
 
   /**
    * @method process
-   * @description Processes the physics engine
-   * @param {number} dt - The delta time
+   * @description Advances the simulation by `dt` seconds, in whichever way the
+   * current time-step mode calls for. Call it once per frame.
+   * @param {number} dt - Seconds elapsed since the previous call
+   * @returns {number} - How many steps were simulated
    */
   process(dt) {
-    if (!isFinite(dt) || dt <= 0) return;
+    this.lastStepCount = 0;
+    if (!Number.isFinite(dt) || dt <= 0) return 0;
 
+    this.lastStepCount =
+      this.timeStepMode === "variable"
+        ? this._stepVariable(dt)
+        : this._stepFixed(dt);
+    return this.lastStepCount;
+  }
+
+  /**
+   * @method _stepVariable
+   * @description Simulates the frame's own delta. Normally that is a single
+   * step of exactly `dt`, so physics advances in lock-step with rendering. Only
+   * an unusually long frame is divided, and only far enough to keep each slice
+   * within `maxTimeStep`.
+   * @param {number} dt
+   * @returns {number} - Steps taken
+   * @private
+   */
+  _stepVariable(dt) {
+    const budget = this.maxTimeStep * this.maxSubSteps;
+    const total = Math.min(dt, budget);
+    const steps = Math.max(1, Math.ceil(total / this.maxTimeStep));
+    const step = total / steps;
+
+    for (let i = 0; i < steps; i++) {
+      this.world.step(step);
+    }
+    return steps;
+  }
+
+  /**
+   * @method _stepFixed
+   * @description Banks elapsed time and simulates as many constant-size slices
+   * as have accumulated, leaving the remainder for next frame.
+   * @param {number} dt
+   * @returns {number} - Steps taken
+   * @private
+   */
+  _stepFixed(dt) {
     this._accumulator += dt;
     let steps = 0;
     while (
@@ -229,20 +422,37 @@ class Physics {
       steps++;
     }
 
-    if (steps === this.maxSubSteps) {
-      this._accumulator = 0;
-    }
+    if (steps === this.maxSubSteps) this._accumulator = 0;
+    return steps;
+  }
+
+  /**
+   * @method getInterpolationAlpha
+   * @description How far the fixed-step simulation currently sits between its
+   * last completed step and the next one (0..1). Useful if you interpolate
+   * renderables between physics states. Always 0 in variable mode, where every
+   * frame already renders a freshly simulated position.
+   * @returns {number}
+   */
+  getInterpolationAlpha() {
+    if (this.timeStepMode === "variable" || this.fixedTimeStep <= 0) return 0;
+    return Math.min(1, this._accumulator / this.fixedTimeStep);
   }
 
   /**
    * @method clear
-   * @description Clears the physics engine objects and resets the gravity
+   * @description Drops every body and starts a fresh world with the original
+   * gravity; use it when tearing a level down. Collision routing and any
+   * listeners added through onCollisionEnter/onCollisionExit are re-bound to
+   * the new world, so they keep working afterwards.
    */
   clear() {
-    this.world = new planck.World({
-      gravity: new planck.Vec2(0, this.gravity),
+    this.world = new World({
+      gravity: new PhysicsVec2(0, this.gravity),
+      velocityThreshold: this.world.velocityThreshold,
     });
     this._accumulator = 0;
+    this._dispatchContacts();
   }
 
   /**

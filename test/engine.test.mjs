@@ -37,7 +37,6 @@ test("MathUtils.lerp / inverseLerp / map", () => {
 });
 
 test("MathUtils.normalize returns a unit vector", () => {
-  // 3-4-5 triangle: length 5, so the normalized vector is exactly unit length.
   const n = MathUtils.normalize({ x: 3, y: 4 });
   assert.ok(Math.abs(MathUtils.length(n) - 1) < 1e-9);
   assert.deepEqual(MathUtils.normalize({ x: 0, y: 0 }), { x: 0, y: 0 });
@@ -87,7 +86,6 @@ test("Time applies timeScale and accumulates elapsed", () => {
   Time.elapsedTime = 0;
   Time.setTimeScale(2);
   Time.setDeltaTime(0.1);
-  // 0.1 raw delta * timeScale 2 = 0.2 scaled; unscaled stays 0.1.
   assert.ok(Math.abs(Time.getDeltaTime() - 0.2) < 1e-9);
   assert.ok(Math.abs(Time.getUnscaledDeltaTime() - 0.1) < 1e-9);
   assert.ok(Math.abs(Time.getElapsedTime() - 0.2) < 1e-9);
@@ -100,10 +98,7 @@ test("IDManager generates unique ids", () => {
   assert.equal(ids.size, 1000);
 });
 
-// Reproduces the engine's camera view matrix (scale -> rotate -> translate) and
-// checks a followed point stays centered at any zoom. Guards the zoom-offset bug.
 function viewSpaceOf(worldX, worldY, camWorldX, camWorldY, zoom) {
-  // setPosition stores the negated world position.
   const camPos = [-camWorldX, -camWorldY, 0];
   const view = mat4.create();
   mat4.scale(view, view, [zoom, zoom, 1]);
@@ -118,7 +113,6 @@ test("camera keeps the followed target centered at every zoom", () => {
   const px = 320;
   const py = -140;
   for (const zoom of [0.5, 1, 2, 3.5]) {
-    // Camera follows the player: camera world position == player position.
     const v = viewSpaceOf(px, py, px, py, zoom);
     assert.ok(Math.abs(v.x) < 1e-6, `x centered at zoom ${zoom}`);
     assert.ok(Math.abs(v.y) < 1e-6, `y centered at zoom ${zoom}`);
@@ -130,15 +124,14 @@ test("Transform hierarchy composes world position with parent scale/rotation", (
   const child = new Transform(new Vector3(5, 0, 0), 0, new Vector2(1, 1));
   child.setParent(parent);
   const w = child.getWorldParts();
-  assert.ok(Math.abs(w.px - 20) < 1e-9); // 10 + 5 * 2 = 20
+  assert.ok(Math.abs(w.px - 20) < 1e-9);
   assert.ok(Math.abs(w.py - 0) < 1e-9);
   assert.equal(w.sx, 2);
 
-  // Rotate the parent 90deg: child's +x local offset becomes +y world.
   parent.rotation = Math.PI / 2;
   const w2 = child.getWorldParts();
   assert.ok(Math.abs(w2.px - 10) < 1e-6);
-  assert.ok(Math.abs(w2.py - 10) < 1e-6); // 5 * 2 along rotated axis
+  assert.ok(Math.abs(w2.py - 10) < 1e-6);
 });
 
 test("Easing endpoints map 0->0 and 1->1", () => {
@@ -161,7 +154,7 @@ test("Tween interpolates and fires onComplete", () => {
     onComplete: () => (completed = true),
   });
   tween.update(0.5);
-  assert.ok(Math.abs(target.x - 5) < 1e-9); // halfway through a 1s tween to 10
+  assert.ok(Math.abs(target.x - 5) < 1e-9);
   tween.update(0.5);
   assert.equal(target.x, 10);
   assert.equal(completed, true);
@@ -175,7 +168,7 @@ test("Timer.after fires once, Timer.every fires N times", () => {
   Timer.every(0.5, () => everyCount++, 2);
   Timer.update(0.4);
   assert.equal(onceCount, 0);
-  Timer.update(0.7); // total 1.1
+  Timer.update(0.7);
   assert.equal(onceCount, 1);
   assert.equal(everyCount, 2);
   Timer.update(5);
@@ -201,7 +194,6 @@ test("SpatialGrid.queryRadius returns nearby items only", () => {
   const grid = new SpatialGrid(50);
   grid.insert("near", 10, 10);
   grid.insert("far", 500, 500);
-  // Radius 100 covers the item at (10,10) but not the one at (500,500).
   const found = grid.queryRadius(0, 0, 100);
   assert.ok(found.includes("near"));
   assert.ok(!found.includes("far"));
@@ -234,12 +226,10 @@ test("Serializer round-trips a scene through JSON", () => {
 
 test("Physics uses a fixed-timestep accumulator", () => {
   const physics = new Physics(-9.8, 30);
-  // Half a fixed step in: nothing has been simulated yet, it is all accumulated.
   physics.process(1 / 120);
   assert.ok(physics._accumulator > 0 && physics._accumulator < 1 / 60);
   physics.process(1 / 120);
   assert.ok(physics._accumulator < 1 / 120);
-  // Zero and NaN deltas must not advance or corrupt the accumulator.
   const before = physics._accumulator;
   physics.process(0);
   physics.process(NaN);
@@ -338,9 +328,8 @@ test("Coroutine sequences time and frame waits", () => {
   assert.deepEqual(log, ["a"], "primed to first yield");
   Coroutine.update(0.5);
   assert.deepEqual(log, ["a"], "still waiting");
-  Coroutine.update(0.6); // total 1.1 > the 1s yield, so it resumes
+  Coroutine.update(0.6);
   assert.deepEqual(log, ["a", "b"]);
-  // waitFrames(2) needs two updates regardless of delta.
   Coroutine.update(0);
   assert.deepEqual(log, ["a", "b"]);
   Coroutine.update(0);
@@ -367,12 +356,10 @@ test("Interpolator interpolates between snapshots", () => {
   const it = new Interpolator({ delay: 0 });
   it.push("e", { x: 0, y: 0 }, 0);
   it.push("e", { x: 10, y: 20 }, 1);
-  // Midway between the t=0 and t=1 snapshots.
   const s = it.sample("e", 0.5);
   assert.ok(Math.abs(s.x - 5) < 1e-9);
   assert.ok(Math.abs(s.y - 10) < 1e-9);
   assert.equal(it.sample("missing", 1), null);
-  // Past the newest snapshot: clamps to it rather than extrapolating.
   const last = it.sample("e", 5);
   assert.equal(last.x, 10);
 });
@@ -384,7 +371,6 @@ test("AudioManager.computeSpatial attenuates with distance and pans", () => {
   let r = am.computeSpatial({ x: 0, y: 0 });
   assert.equal(r.volume, 1);
   assert.equal(r.pan, 0);
-  // 600 is the midpoint of the 100..1100 rolloff band.
   r = am.computeSpatial({ x: 600, y: 0 });
   assert.ok(Math.abs(r.volume - 0.5) < 1e-9, "linear rolloff midpoint");
   assert.ok(r.pan > 0 && r.pan < 1);
@@ -399,23 +385,20 @@ test("Tilemap.computeAutoTile builds neighbor bitmask frames", () => {
     [1, 0],
   ];
   const frames = Tilemap.computeAutoTile(grid, { edgesSolid: false });
-  // Neighbor bitmask: solid right + solid down = 2 | 4 = 6.
   assert.equal(frames[0][0], 6);
-  assert.equal(frames[1][1], -1); // empty cell gets no frame
+  assert.equal(frames[1][1], -1);
   const based = Tilemap.computeAutoTile(grid, { edgesSolid: false, base: 100 });
-  assert.equal(based[0][0], 106); // base 100 + bitmask 6
+  assert.equal(based[0][0], 106);
 });
 
 test("SpriteBatch._writeQuad writes a centered, rotated quad", () => {
   const out = new Float32Array(4 * 8);
-  // Unrotated unit quad centered on the origin: first vertex is the top-left corner.
   SpriteBatch._writeQuad(out, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1);
   assert.ok(Math.abs(out[0] - -1) < 1e-9);
   assert.ok(Math.abs(out[1] - 1) < 1e-9);
   assert.equal(out[2], 0);
   assert.equal(out[3], 0);
   assert.equal(out[4], 1);
-  // Rotated 90deg: the top-left corner swings to the bottom-left.
   const out2 = new Float32Array(4 * 8);
   SpriteBatch._writeQuad(
     out2,
