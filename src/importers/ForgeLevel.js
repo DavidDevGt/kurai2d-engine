@@ -4,7 +4,144 @@ import InstancedTexture from "../InstancedTexture.js";
 import RigidBody from "../components/RigidBody.js";
 import BoxCollider from "../components/BoxCollider.js";
 import PolygonCollider from "../components/PolygonCollider.js";
+import Behaviour from "../components/Behaviour.js";
+import CameraManager from "../managers/CameraManager.js";
 import { Vector2, Vector3 } from "../Physics.js";
+
+/**
+ * @class ParallaxLayer
+ * @extends Behaviour
+ * @description Shifts every instance of a tile layer by a fraction of how far
+ * the active camera has moved since load, so a layer with `parallaxX/Y < 1`
+ * scrolls slower than the world (a distant background) and `1` stays locked
+ * to it (the default, ordinary foreground). Attached automatically by
+ * {@link ForgeLevel} to any layer whose Forge parallax factors aren't `1`.
+ * @private
+ */
+class ParallaxLayer extends Behaviour {
+  constructor(instanced, basePositions, parallaxX, parallaxY) {
+    super();
+    this.instanced = instanced;
+    this.basePositions = basePositions;
+    this.parallaxX = parallaxX;
+    this.parallaxY = parallaxY;
+    this.origin = null;
+  }
+
+  start() {
+    const camera = CameraManager.getCamera();
+    const pos =
+      camera && camera.getPosition ? camera.getPosition() : { x: 0, y: 0 };
+    this.origin = { x: pos.x, y: pos.y };
+  }
+
+  update() {
+    const camera = CameraManager.getCamera();
+    if (!camera || !camera.getPosition || !this.origin) return;
+    const pos = camera.getPosition();
+    const dx = (pos.x - this.origin.x) * (1 - this.parallaxX);
+    const dy = (pos.y - this.origin.y) * (1 - this.parallaxY);
+    if (dx === 0 && dy === 0) return;
+
+    const instances = this.instanced.instances;
+    for (let i = 0; i < instances.length; i++) {
+      const base = this.basePositions[i];
+      instances[i].transform.position.x = base.x + dx;
+      instances[i].transform.position.y = base.y + dy;
+    }
+    this.instanced.markDirty();
+  }
+}
+
+/** Twice the signed area of triangle (a,b,c); positive when a→b→c turns left. */
+function cross([ax, ay], [bx, by], [cx, cy]) {
+  return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
+}
+
+function signedArea(points) {
+  let sum = 0;
+  for (let i = 0; i < points.length; i++) {
+    const [x1, y1] = points[i];
+    const [x2, y2] = points[(i + 1) % points.length];
+    sum += x1 * y2 - x2 * y1;
+  }
+  return sum / 2;
+}
+
+/** True if every turn around the polygon bends the same way (collinear runs are ignored). */
+function isConvex(points) {
+  if (points.length < 4) return true;
+  let sign = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    const c = points[(i + 2) % points.length];
+    const turn = cross(a, b, c);
+    if (Math.abs(turn) < 1e-9) continue;
+    const s = turn > 0 ? 1 : -1;
+    if (sign === 0) sign = s;
+    else if (s !== sign) return false;
+  }
+  return true;
+}
+
+function pointInTriangle(p, a, b, c) {
+  const d1 = cross(a, b, p);
+  const d2 = cross(b, c, p);
+  const d3 = cross(c, a, p);
+  const hasNeg = d1 < 0 || d2 < 0 || d3 < 0;
+  const hasPos = d1 > 0 || d2 > 0 || d3 > 0;
+  return !(hasNeg && hasPos);
+}
+
+/**
+ * @function triangulate
+ * @description Ear-clipping triangulation of a simple polygon (no holes,
+ * no self-intersections). Concave collider shapes are decomposed this way
+ * into triangles, since the physics engine's PolygonShape only accepts
+ * convex point sets and would otherwise silently collapse to their convex
+ * hull, discarding the concave part.
+ * @param {Array<[number,number]>} points
+ * @returns {Array<Array<[number,number]>>} - Each entry is a 3-point triangle
+ */
+function triangulate(points) {
+  const ordered = signedArea(points) < 0 ? [...points].reverse() : points;
+  const indices = ordered.map((_, i) => i);
+  const triangles = [];
+
+  let guard = 0;
+  while (indices.length > 3 && guard++ < indices.length * indices.length) {
+    let clipped = false;
+    for (let i = 0; i < indices.length; i++) {
+      const i0 = indices[(i - 1 + indices.length) % indices.length];
+      const i1 = indices[i];
+      const i2 = indices[(i + 1) % indices.length];
+      const a = ordered[i0],
+        b = ordered[i1],
+        c = ordered[i2];
+      if (cross(a, b, c) <= 1e-9) continue;
+
+      const containsOther = indices.some(
+        (idx) =>
+          idx !== i0 &&
+          idx !== i1 &&
+          idx !== i2 &&
+          pointInTriangle(ordered[idx], a, b, c)
+      );
+      if (containsOther) continue;
+
+      triangles.push([a, b, c]);
+      indices.splice(i, 1);
+      clipped = true;
+      break;
+    }
+    if (!clipped) break;
+  }
+  if (indices.length === 3) {
+    triangles.push(indices.map((i) => ordered[i]));
+  }
+  return triangles;
+}
 
 /**
  * @class ForgeLevel
@@ -250,12 +387,30 @@ class ForgeLevel {
           );
         }
         instance.setTexCoords(
-          ForgeLevel.tileTexCoords(tileset, cell.index, cell.flipH, cell.flipV)
+          ForgeLevel.tileTexCoords(
+            tileset,
+            cell.index,
+            cell.flipH,
+            cell.flipV,
+            pixelart
+          )
         );
         instanced.addInstance(instance);
       }
 
       instanced.setStatic(true);
+
+      const parallaxX = layer.parallaxX ?? 1;
+      const parallaxY = layer.parallaxY ?? 1;
+      if (parallaxX !== 1 || parallaxY !== 1) {
+        const basePositions = instanced.instances.map((inst) => ({
+          x: inst.transform.position.x,
+          y: inst.transform.position.y,
+        }));
+        gameObject.addComponent(
+          new ParallaxLayer(instanced, basePositions, parallaxX, parallaxY)
+        );
+      }
 
       built.push({
         gameObject,
@@ -264,15 +419,8 @@ class ForgeLevel {
         layer,
         count: cells.length,
         depth,
-        parallax: { x: layer.parallaxX ?? 1, y: layer.parallaxY ?? 1 },
+        parallax: { x: parallaxX, y: parallaxY },
       });
-
-      if ((layer.parallaxX ?? 1) !== 1 || (layer.parallaxY ?? 1) !== 1) {
-        console.warn(
-          `[ForgeLevel] Layer "${layer.name}" requests parallax ` +
-            `(${layer.parallaxX}, ${layer.parallaxY}); scroll it yourself against the camera.`
-        );
-      }
     }
 
     return built;
@@ -281,16 +429,29 @@ class ForgeLevel {
   /**
    * @method tileTexCoords
    * @description UV quad for one tile of an atlas, in the corner order
-   * `Drawable.getFrameTexCoords` uses: (R,B) (L,B) (R,T) (L,T). Coordinates are
-   * inset by half a texel so neighbouring tiles never bleed into each other,
-   * and the v axis is flipped because GL samples from the bottom up.
+   * `Drawable.getFrameTexCoords` uses: (R,B) (L,B) (R,T) (L,T). The v axis is
+   * flipped because GL samples from the bottom up.
+   *
+   * With NEAREST filtering (`pixelart: true`, the default) tiles are meant to
+   * sit flush against their neighbors, so no inset is applied: adjacent tiles
+   * in the atlas never blend under NEAREST, and insetting would shrink every
+   * tile by half a texel on each edge, leaving a visible sliver of the
+   * neighboring tile's (or the background's) color at every seam. With LINEAR
+   * filtering that half-texel bleed is real, so the inset is kept there.
    * @param {Object} tileset - A Forge tileset entry
    * @param {number} index - Tile index within the tileset
    * @param {boolean} [flipH=false]
    * @param {boolean} [flipV=false]
+   * @param {boolean} [pixelart=true] - Whether the atlas is sampled with NEAREST
    * @returns {number[]} - 8 UV floats
    */
-  static tileTexCoords(tileset, index, flipH = false, flipV = false) {
+  static tileTexCoords(
+    tileset,
+    index,
+    flipH = false,
+    flipV = false,
+    pixelart = true
+  ) {
     const {
       imageW,
       imageH,
@@ -308,8 +469,8 @@ class ForgeLevel {
     const px = marginX + col * (tileW + spacingX);
     const py = marginY + row * (tileH + spacingY);
 
-    const ix = 0.5 / imageW;
-    const iy = 0.5 / imageH;
+    const ix = pixelart ? 0 : 0.5 / imageW;
+    const iy = pixelart ? 0 : 0.5 / imageH;
 
     let uRight = (px + tileW) / imageW - ix;
     let uLeft = px / imageW + ix;
@@ -391,11 +552,7 @@ class ForgeLevel {
     }
 
     const isFullTile = (cell) =>
-      cell &&
-      cell.bounds.w > 0.99 &&
-      cell.bounds.h > 0.99 &&
-      cell.bounds.x < 0.01 &&
-      cell.bounds.y < 0.01;
+      cell && Math.abs(signedArea(cell.points)) > 0.99;
 
     for (let row = 0; row < rows; row++) {
       let col = 0;
@@ -510,6 +667,11 @@ class ForgeLevel {
    * tile's own collider shape. The body sits at the shape's bounding-box
    * centre; the polygon's points are converted from Forge's normalised,
    * top-down tile space into local physics units around that centre.
+   *
+   * The shape is decomposed into triangles first when it isn't convex: the
+   * physics engine's PolygonShape only accepts convex point sets and would
+   * otherwise silently reduce a concave outline to its convex hull. A convex
+   * shape (the common case) still gets exactly one collider, unchanged.
    * @private
    */
   static _staticPolygon(physics, ctx) {
@@ -538,22 +700,25 @@ class ForgeLevel {
       ownerObject
     );
 
-    const localPoints = points.map(([px, py]) => {
+    const toLocal = ([px, py]) => {
       const worldX = originX + col * tileSize + px * tileSize;
       const worldY = originY - row * tileSize - py * tileSize;
       return { x: (worldX - centerX) / scale, y: (worldY - centerY) / scale };
-    });
+    };
 
-    new PolygonCollider(
-      body,
-      localPoints,
-      0,
-      0.6,
-      0,
-      false,
-      ownerObject,
-      filter
-    );
+    const pieces = isConvex(points) ? [points] : triangulate(points);
+    for (const piece of pieces) {
+      new PolygonCollider(
+        body,
+        piece.map(toLocal),
+        0,
+        0.6,
+        0,
+        false,
+        ownerObject,
+        filter
+      );
+    }
     return body;
   }
 

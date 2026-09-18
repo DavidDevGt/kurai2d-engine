@@ -44,16 +44,23 @@ declare class ForgeLevel {
     /**
      * @method tileTexCoords
      * @description UV quad for one tile of an atlas, in the corner order
-     * `Drawable.getFrameTexCoords` uses: (R,B) (L,B) (R,T) (L,T). Coordinates are
-     * inset by half a texel so neighbouring tiles never bleed into each other,
-     * and the v axis is flipped because GL samples from the bottom up.
+     * `Drawable.getFrameTexCoords` uses: (R,B) (L,B) (R,T) (L,T). The v axis is
+     * flipped because GL samples from the bottom up.
+     *
+     * With NEAREST filtering (`pixelart: true`, the default) tiles are meant to
+     * sit flush against their neighbors, so no inset is applied: adjacent tiles
+     * in the atlas never blend under NEAREST, and insetting would shrink every
+     * tile by half a texel on each edge, leaving a visible sliver of the
+     * neighboring tile's (or the background's) color at every seam. With LINEAR
+     * filtering that half-texel bleed is real, so the inset is kept there.
      * @param {Object} tileset - A Forge tileset entry
      * @param {number} index - Tile index within the tileset
      * @param {boolean} [flipH=false]
      * @param {boolean} [flipV=false]
+     * @param {boolean} [pixelart=true] - Whether the atlas is sampled with NEAREST
      * @returns {number[]} - 8 UV floats
      */
-    static tileTexCoords(tileset: any, index: number, flipH?: boolean, flipV?: boolean): number[];
+    static tileTexCoords(tileset: any, index: number, flipH?: boolean, flipV?: boolean, pixelart?: boolean): number[];
     /**
      * @method _tilesetFor
      * @description Finds the tileset that owns a gid (the one with the largest
@@ -84,6 +91,11 @@ declare class ForgeLevel {
      * tile's own collider shape. The body sits at the shape's bounding-box
      * centre; the polygon's points are converted from Forge's normalised,
      * top-down tile space into local physics units around that centre.
+     *
+     * The shape is decomposed into triangles first when it isn't convex: the
+     * physics engine's PolygonShape only accepts convex point sets and would
+     * otherwise silently reduce a concave outline to its convex hull. A convex
+     * shape (the common case) still gets exactly one collider, unchanged.
      * @private
      */
     private static _staticPolygon;

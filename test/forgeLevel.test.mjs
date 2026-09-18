@@ -5,6 +5,20 @@ import { Physics } from "../src/Physics.js";
 import BoxCollider from "../src/components/BoxCollider.js";
 import PolygonCollider from "../src/components/PolygonCollider.js";
 import ForgeLevel from "../src/importers/ForgeLevel.js";
+import GLManager from "../src/managers/GLManager.js";
+import CameraManager from "../src/managers/CameraManager.js";
+
+function fakeGL() {
+  return {
+    ARRAY_BUFFER: 1,
+    STATIC_DRAW: 2,
+    DYNAMIC_DRAW: 3,
+    createBuffer: () => ({}),
+    bindBuffer: () => {},
+    bufferData: () => {},
+    deleteBuffer: () => {},
+  };
+}
 
 /**
  * A 2x1 tileset: tile 0 is a full-tile collider, tile 1 is a small triangle
@@ -74,6 +88,159 @@ test("tileTexCoords flips U and V independently", () => {
 
   assert.equal(flippedH[0], base[2], "U channel swaps under a horizontal flip");
   assert.equal(flippedV[1], base[5], "V channel swaps under a vertical flip");
+});
+
+test("tileTexCoords covers the full tile with no inset under pixelart (NEAREST), but insets under linear filtering", () => {
+  const tileset = {
+    imageW: 32,
+    imageH: 16,
+    tileW: 16,
+    tileH: 16,
+    columns: 2,
+  };
+  const [uRightPA, vBottomPA, uLeftPA, , , vTopPA] = ForgeLevel.tileTexCoords(
+    tileset,
+    0,
+    false,
+    false,
+    true
+  );
+  assert.equal(uLeftPA, 0, "left edge reaches the tile boundary exactly");
+  assert.equal(
+    uRightPA,
+    16 / 32,
+    "right edge reaches the tile boundary exactly"
+  );
+  assert.equal(vTopPA, 0, "top edge reaches the tile boundary exactly");
+  assert.equal(
+    vBottomPA,
+    16 / 16,
+    "bottom edge reaches the tile boundary exactly"
+  );
+
+  const [uRightLin, , uLeftLin] = ForgeLevel.tileTexCoords(
+    tileset,
+    0,
+    false,
+    false,
+    false
+  );
+  assert.ok(
+    uLeftLin > 0,
+    "linear filtering keeps the anti-bleed inset on the left edge"
+  );
+  assert.ok(
+    uRightLin < 16 / 32,
+    "linear filtering keeps the anti-bleed inset on the right edge"
+  );
+});
+
+test("a parallax layer actually scrolls slower than the world as the camera moves", () => {
+  GLManager.setGL(fakeGL());
+  GLManager.setProgramInfo({});
+  const originalError = console.error;
+  console.error = () => {};
+
+  let camPos = { x: 0, y: 0 };
+  CameraManager.setCamera({ getPosition: () => camPos });
+
+  const data = {
+    tileSize: 16,
+    cols: 2,
+    rows: 1,
+    tilesets: [
+      {
+        firstgid: 1,
+        name: "set",
+        image: "set.png",
+        imageW: 32,
+        imageH: 16,
+        tileW: 16,
+        tileH: 16,
+        columns: 2,
+      },
+    ],
+    layers: [
+      {
+        type: "tile",
+        name: "bg",
+        visible: true,
+        data: [1, 1],
+        parallaxX: 0.5,
+        parallaxY: 0.5,
+      },
+    ],
+  };
+
+  const scene = { add() {} };
+  let map;
+  try {
+    map = ForgeLevel.load(data, { scene, pixelart: true });
+  } finally {
+    console.error = originalError;
+  }
+
+  const built = map.layers[0];
+  const basePositions = built.instanced.instances.map((inst) => ({
+    x: inst.transform.position.x,
+    y: inst.transform.position.y,
+  }));
+
+  built.gameObject.update(0.016);
+  camPos = { x: 100, y: 40 };
+  built.gameObject.update(0.016);
+
+  for (let i = 0; i < basePositions.length; i++) {
+    const inst = built.instanced.instances[i];
+    assert.ok(
+      Math.abs(inst.transform.position.x - (basePositions[i].x + 50)) < 1e-9,
+      "a 0.5 parallax factor moves the layer by half the camera's x delta"
+    );
+    assert.ok(
+      Math.abs(inst.transform.position.y - (basePositions[i].y + 20)) < 1e-9,
+      "a 0.5 parallax factor moves the layer by half the camera's y delta"
+    );
+  }
+});
+
+test("a non-parallax layer (factor 1) gets no ParallaxLayer behaviour at all", () => {
+  GLManager.setGL(fakeGL());
+  GLManager.setProgramInfo({});
+  const originalError = console.error;
+  console.error = () => {};
+
+  const data = {
+    tileSize: 16,
+    cols: 1,
+    rows: 1,
+    tilesets: [
+      {
+        firstgid: 1,
+        name: "set",
+        image: "set.png",
+        imageW: 16,
+        imageH: 16,
+        tileW: 16,
+        tileH: 16,
+        columns: 1,
+      },
+    ],
+    layers: [{ type: "tile", name: "ground", visible: true, data: [1] }],
+  };
+
+  const scene = { add() {} };
+  let map;
+  try {
+    map = ForgeLevel.load(data, { scene, pixelart: true });
+  } finally {
+    console.error = originalError;
+  }
+
+  assert.equal(
+    map.layers[0].gameObject.components.length,
+    1,
+    "just the InstancedTexture, no parallax behaviour"
+  );
 });
 
 test("_tilesetFor picks the tileset owning a gid", () => {
@@ -169,6 +336,99 @@ test("_buildColliders gives a non-full-tile shape a real PolygonCollider", () =>
   assert.ok(bodies[0].getCollider() instanceof BoxCollider);
   assert.ok(bodies[1].getCollider() instanceof PolygonCollider);
   assert.equal(bodies[1].getCollider().getPoints().length, 3);
+});
+
+test("_buildColliders decomposes a concave collider shape into triangles on one body", () => {
+  const physics = new Physics(-600, 30);
+  const data = {
+    tileSize: 16,
+    cols: 1,
+    rows: 1,
+    tilesets: [
+      {
+        firstgid: 1,
+        colliders: {
+          0: {
+            wall: true,
+            points: [
+              [0, 0],
+              [1, 0],
+              [1, 0.5],
+              [0.5, 0.5],
+              [0.5, 1],
+              [0, 1],
+            ],
+          },
+        },
+      },
+    ],
+    layers: [{ type: "tile", name: "ground", data: [1] }],
+  };
+
+  const bodies = ForgeLevel._buildColliders(data, {
+    cols: 1,
+    rows: 1,
+    tileSize: 16,
+    physics,
+    filter: null,
+    ownerObject: null,
+  });
+
+  assert.equal(bodies.length, 1, "the concave shape is still a single body");
+
+  let fixtureCount = 0;
+  for (let f = bodies[0].getBody().getFixtureList(); f; f = f.next)
+    fixtureCount++;
+  assert.equal(
+    fixtureCount,
+    4,
+    "a 6-vertex concave polygon ear-clips into 4 triangles"
+  );
+});
+
+test("_buildColliders keeps a convex non-full-tile shape as exactly one collider", () => {
+  const physics = new Physics(-600, 30);
+  const data = {
+    tileSize: 16,
+    cols: 1,
+    rows: 1,
+    tilesets: [
+      {
+        firstgid: 1,
+        colliders: {
+          0: {
+            wall: true,
+            points: [
+              [0, 0.5],
+              [0.5, 0],
+              [1, 0.5],
+              [0.5, 1],
+            ],
+          },
+        },
+      },
+    ],
+    layers: [{ type: "tile", name: "ground", data: [1] }],
+  };
+
+  const bodies = ForgeLevel._buildColliders(data, {
+    cols: 1,
+    rows: 1,
+    tileSize: 16,
+    physics,
+    filter: null,
+    ownerObject: null,
+  });
+
+  let fixtureCount = 0;
+  for (let f = bodies[0].getBody().getFixtureList(); f; f = f.next)
+    fixtureCount++;
+  assert.equal(
+    fixtureCount,
+    1,
+    "a convex quad stays a single collider, no needless splitting"
+  );
+  assert.equal(bodies[0].getCollider().getPoints().length, 4);
 });
 
 test("_buildColliders falls back to a bounding box when a collider shape is degenerate", () => {
