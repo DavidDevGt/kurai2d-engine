@@ -1,26 +1,26 @@
 import { initShaderProgram } from "./GLUtils.js";
+import { LEGACY_FRAGMENT_PRELUDE, adaptLegacyGLSL } from "./Shaders.js";
 import GLManager from "./managers/GLManager.js";
 import RenderStats from "./managers/RenderStats.js";
 import RenderTarget from "./RenderTarget.js";
 
-const FULLSCREEN_VERTEX_SHADER = `
-  attribute vec2 aPos;
-  varying vec2 vUV;
+const FULLSCREEN_VERTEX_SHADER = `#version 300 es
+  layout(location = 0) in vec2 aPos;
+  out vec2 vUV;
   void main() {
     vUV = aPos * 0.5 + 0.5;
     gl_Position = vec4(aPos, 0.0, 1.0);
   }
 `;
 
-const FRAGMENT_HEADER = `
-  #ifdef GL_ES
+const FRAGMENT_HEADER = `#version 300 es
   precision highp float;
-  #endif
-  varying vec2 vUV;
+  in vec2 vUV;
   uniform sampler2D uScene;
   uniform vec2 uResolution;
   uniform float uTime;
-`;
+  out vec4 fragColor;
+${LEGACY_FRAGMENT_PRELUDE}`;
 
 /**
  * @class PostEffect
@@ -32,7 +32,7 @@ const FRAGMENT_HEADER = `
  * @example
  * const tint = new PostEffect("tint", `
  *   uniform vec3 uTint;
- *   void main() { gl_FragColor = texture2D(uScene, vUV) * vec4(uTint, 1.0); }
+ *   void main() { fragColor = texture(uScene, vUV) * vec4(uTint, 1.0); }
  * `, { setUniforms: (gl, loc) => gl.uniform3f(loc("uTint"), 1.0, 0.8, 0.8) });
  */
 class PostEffect {
@@ -57,7 +57,7 @@ class PostEffect {
     this.program = initShaderProgram(
       gl,
       FULLSCREEN_VERTEX_SHADER,
-      FRAGMENT_HEADER + this.fragmentSource
+      FRAGMENT_HEADER + adaptLegacyGLSL(this.fragmentSource)
     );
   }
 

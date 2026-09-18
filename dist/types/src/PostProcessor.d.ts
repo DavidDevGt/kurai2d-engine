@@ -87,7 +87,7 @@ declare class PostProcessor {
  * @example
  * const tint = new PostEffect("tint", `
  *   uniform vec3 uTint;
- *   void main() { gl_FragColor = texture2D(uScene, vUV) * vec4(uTint, 1.0); }
+ *   void main() { fragColor = texture(uScene, vUV) * vec4(uTint, 1.0); }
  * `, { setUniforms: (gl, loc) => gl.uniform3f(loc("uTint"), 1.0, 0.8, 0.8) });
  */
 export class PostEffect {

@@ -70,6 +70,12 @@ declare class Drawable {
     /** @private */
     private _finalTransformMatrix;
     /** @private */
+    private _scratchPos;
+    /** @private */
+    private _scratchScale;
+    /** @private */
+    private _scratchPivot;
+    /** @private */
     private _lastTexFrame;
     /** @private */
     private _lastMirrored;
@@ -249,6 +255,21 @@ declare class Drawable {
      * @description Stops the animation
      */
     stopAnimation(): void;
+    /**
+     * @method getFrameUV
+     * @description Computes this drawable's current normalized UV rect,
+     * honoring the active frame/region and the mirrored/flippedY flags. Pure
+     * (no GL calls, no cache bookkeeping) so it can be called from draw() and
+     * from external batched-rendering paths that need the same UVs without
+     * owning their own texcoord buffer.
+     * @returns {{left: number, right: number, top: number, bottom: number}}
+     */
+    getFrameUV(): {
+        left: number;
+        right: number;
+        top: number;
+        bottom: number;
+    };
     /**
      * @method draw
      * @description Draws the object

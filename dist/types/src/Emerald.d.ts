@@ -3,9 +3,14 @@ export default Emerald;
  * @class Emerald
  * @description A class that represents the Emerald engine
  * @param {HTMLCanvasElement} canvas - The canvas element
+ * @param {Object} [options] - Context options
+ * @param {boolean} [options.antialias=true] - Request an MSAA drawing buffer.
+ * Pixel-art games that never rotate or scale sprites to fractional sizes can
+ * pass `false` for hard, exact pixel edges (and to avoid MSAA texture-edge
+ * artifacts); rotated sprites and shapes will then be aliased.
  */
 declare class Emerald {
-    constructor(canvas: any);
+    constructor(canvas: any, options?: {});
     gl: any;
     camera: Camera;
     cameras: Camera[];
@@ -16,6 +21,13 @@ declare class Emerald {
     cullingEnabled: boolean;
     /** @private */
     private _drawOrder;
+    /**
+     * Auto-batches consecutive plain-Texture objects that qualify (see
+     * _isAutoBatchable) into single draw calls instead of one drawArrays per
+     * object. See _queueBatchedDraw.
+     * @private
+     */
+    private _autoBatch;
     /** @private */
     private _projection;
     /** @private */
@@ -377,6 +389,29 @@ declare class Emerald {
      * @private
      */
     private _renderCamera;
+    /**
+     * @method _isAutoBatchable
+     * @description Whether a Drawable can be folded into the auto-batch instead
+     * of issuing its own draw call: it must be a plain Texture (not a subclass
+     * with its own draw() override, and not InstancedTexture, which already
+     * batches via GPU instancing) with no feature the batch's minimal shader
+     * can't reproduce - no custom material (different shader), no lighting
+     * (the batch shader has no lighting terms), no wireframe mode, only the
+     * default "normal" blend mode (the batch never touches blendFunc), and no
+     * custom pivot (the batch's origin offset isn't rotated the way a pivoted
+     * transform is, so it would place a rotated sprite incorrectly).
+     * @private
+     */
+    private _isAutoBatchable;
+    /**
+     * @method _queueBatchedDraw
+     * @description Queues one Texture object's current frame into the shared
+     * SpriteBatch, reproducing the same position/rotation/scale/UV/tint/opacity
+     * math that Drawable.draw() would have applied, so batched and unbatched
+     * rendering are visually identical.
+     * @private
+     */
+    private _queueBatchedDraw;
     /**
      * @method addCamera
      * @description Adds a camera to the render list (for split-screen, etc.).

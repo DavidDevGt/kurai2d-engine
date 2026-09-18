@@ -2,14 +2,14 @@ import { initShaderProgram } from "./GLUtils.js";
 import GLManager from "./managers/GLManager.js";
 import RenderStats from "./managers/RenderStats.js";
 
-const BATCH_VERTEX_SHADER = `
-  attribute vec2 aPos;
-  attribute vec2 aUV;
-  attribute vec4 aColor;
+const BATCH_VERTEX_SHADER = `#version 300 es
+  layout(location = 0) in vec2 aPos;
+  layout(location = 1) in vec2 aUV;
+  layout(location = 2) in vec4 aColor;
   uniform mat4 uProjection;
   uniform mat4 uView;
-  varying vec2 vUV;
-  varying vec4 vColor;
+  centroid out vec2 vUV;
+  out vec4 vColor;
   void main() {
     gl_Position = uProjection * uView * vec4(aPos, 0.0, 1.0);
     vUV = aUV;
@@ -17,17 +17,16 @@ const BATCH_VERTEX_SHADER = `
   }
 `;
 
-const BATCH_FRAGMENT_SHADER = `
-  #ifdef GL_ES
+const BATCH_FRAGMENT_SHADER = `#version 300 es
   precision highp float;
-  #endif
   uniform sampler2D uSampler;
-  varying vec2 vUV;
-  varying vec4 vColor;
+  centroid in vec2 vUV;
+  in vec4 vColor;
+  out vec4 fragColor;
   void main() {
-    vec4 tex = texture2D(uSampler, vUV);
+    vec4 tex = texture(uSampler, vUV);
     if (tex.a < 0.01) discard;
-    gl_FragColor = tex * vColor;
+    fragColor = tex * vColor;
   }
 `;
 

@@ -1,27 +1,27 @@
-const STANDARD_VERTEX_SHADER = `
-  attribute vec4 aVertexPosition;
-  attribute vec2 aTextureCoord;
+const STANDARD_VERTEX_SHADER = `#version 300 es
+  layout(location = 0) in vec4 aVertexPosition;
+  layout(location = 1) in vec2 aTextureCoord;
 
-  attribute vec4 aInstanceMatrix0;
-  attribute vec4 aInstanceMatrix1;
-  attribute vec4 aInstanceMatrix2;
-  attribute vec4 aInstanceMatrix3;
+  layout(location = 2) in vec4 aInstanceMatrix0;
+  layout(location = 3) in vec4 aInstanceMatrix1;
+  layout(location = 4) in vec4 aInstanceMatrix2;
+  layout(location = 5) in vec4 aInstanceMatrix3;
 
-  attribute vec2 aInstanceTexCoord0;
-  attribute vec2 aInstanceTexCoord1;
-  attribute vec2 aInstanceTexCoord2;
-  attribute vec2 aInstanceTexCoord3;
+  layout(location = 6) in vec2 aInstanceTexCoord0;
+  layout(location = 7) in vec2 aInstanceTexCoord1;
+  layout(location = 8) in vec2 aInstanceTexCoord2;
+  layout(location = 9) in vec2 aInstanceTexCoord3;
 
-  attribute vec4 aInstanceColor;
+  layout(location = 10) in vec4 aInstanceColor;
 
   uniform mat4 uModelViewMatrix;
   uniform mat4 uInstancedModelViewMatrix;
   uniform mat4 uProjectionMatrix;
   uniform bool useInstances;
 
-  varying highp vec2 vTexCoord;
-  varying vec2 vFragPos;
-  varying vec4 vInstanceColor;
+  centroid out highp vec2 vTexCoord;
+  out vec2 vFragPos;
+  out vec4 vInstanceColor;
 
   void main() {
     mat4 instanceMatrix = mat4(
@@ -36,7 +36,7 @@ const STANDARD_VERTEX_SHADER = `
         vFragPos = (uInstancedModelViewMatrix * instanceMatrix * aVertexPosition).xy;
         vInstanceColor = aInstanceColor;
 
-        int vertexIndex = int(aVertexPosition.x > 0.0 ? (aVertexPosition.y > 0.0 ? 0 : 2) : (aVertexPosition.y > 0.0 ? 1 : 3));
+        int vertexIndex = aVertexPosition.x > 0.0 ? (aVertexPosition.y > 0.0 ? 0 : 2) : (aVertexPosition.y > 0.0 ? 1 : 3);
 
         if(vertexIndex == 0) {
             vTexCoord = aInstanceTexCoord0;
@@ -56,10 +56,8 @@ const STANDARD_VERTEX_SHADER = `
   }
 `;
 
-const STANDARD_FRAGMENT_SHADER = `
-    #ifdef GL_ES
+const STANDARD_FRAGMENT_SHADER = `#version 300 es
     precision highp float;
-    #endif
     uniform bool useTexture;
     uniform vec4 uColor;
     uniform sampler2D uSampler;
@@ -81,16 +79,18 @@ const STANDARD_FRAGMENT_SHADER = `
     uniform vec3 uAmbientLightValues;
     uniform bool uUseLighting;
 
-    varying vec2 vTexCoord;
-    varying vec2 vFragPos;
-    varying vec4 vInstanceColor;
+    centroid in highp vec2 vTexCoord;
+    in vec2 vFragPos;
+    in vec4 vInstanceColor;
+
+    out vec4 fragColor;
 
     void main() {
         vec4 ambientLight = vec4(uAmbientLightValues.xyz, 1.0);
 
         vec4 texColor;
         if (useTexture) {
-            texColor = texture2D(uSampler, vTexCoord);
+            texColor = texture(uSampler, vTexCoord);
             if (texColor.a < 0.01) discard;
             texColor *= uColor;
         } else {
@@ -143,8 +143,45 @@ const STANDARD_FRAGMENT_SHADER = `
             outColor = texColor;
         }
         outColor.a *= clamp(uOpacity, 0.0, 1.0);
-        gl_FragColor = outColor;
+        fragColor = outColor;
     }
 `;
 
-export { STANDARD_VERTEX_SHADER, STANDARD_FRAGMENT_SHADER };
+const LEGACY_VERTEX_PRELUDE = `
+#define attribute in
+#define varying out
+`;
+
+const LEGACY_FRAGMENT_PRELUDE = `
+#define varying in
+#define texture2D texture
+#define texture2DProj textureProj
+#define texture2DLod textureLod
+#define texture2DLodEXT textureLod
+#define gl_FragColor fragColor
+`;
+
+/**
+ * @method adaptLegacyGLSL
+ * @description Lets user-written GLSL ES 1.00 sources (Material fragment and
+ * vertex bodies, PostEffect fragments) run under the engine's GLSL ES 3.00
+ * headers. The preludes above map `attribute`, `varying`, `texture2D` and
+ * `gl_FragColor` onto their ES 3.00 forms; this strips the `#extension` lines
+ * for features that are built into ES 3.00 and would otherwise fail to compile.
+ * @param {string} source - Shader body written against ES 1.00 or ES 3.00
+ * @returns {string} - The body, safe to append after an engine header
+ */
+function adaptLegacyGLSL(source) {
+  return source.replace(
+    /^[ \t]*#extension[ \t]+GL_(?:OES_standard_derivatives|EXT_shader_texture_lod)[ \t]*:[ \t]*\w+[ \t]*$/gm,
+    ""
+  );
+}
+
+export {
+  STANDARD_VERTEX_SHADER,
+  STANDARD_FRAGMENT_SHADER,
+  LEGACY_VERTEX_PRELUDE,
+  LEGACY_FRAGMENT_PRELUDE,
+  adaptLegacyGLSL,
+};

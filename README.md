@@ -116,6 +116,8 @@ SceneManager.setScene(scene);
 emerald.setBackgroundColor(new Color(20, 20, 30, 255)); // color = new Color(r, g, b, a = 255)
 ```
 
+`new Emerald(canvas, { antialias: false })` turns off antialiasing (on by default). Pixel-art games that don't rotate sprites can use it for crisp, exact pixel edges.
+
 To draw items on the screen you need some sort of animation loop. You can drive one yourself with `window.requestAnimationFrame`:
 
 ```javascript
@@ -1653,7 +1655,7 @@ bloom.enabled = false;
 
 `drawScene` automatically routes through the processor while any enabled effect exists; if none do, it draws straight to the screen with zero overhead.
 
-Write a custom pass by constructing a `PostEffect`. Your fragment shader gets `vUV` (0–1 screen UV), `uScene` (the previous pass), `uResolution`, and `uTime` for free; declare any extra uniforms and set them in `setUniforms`:
+Write a custom pass by constructing a `PostEffect`. Your fragment shader (GLSL ES 3.00) gets `vUV` (0–1 screen UV), `uScene` (the previous pass), `uResolution`, and `uTime` for free, and writes its result to `fragColor`. Declare any extra uniforms and set them in `setUniforms`:
 
 ```javascript
 import { PostEffect } from "emeraldengine";
@@ -1663,7 +1665,7 @@ const tint = new PostEffect(
   `
   uniform vec3 uTint;
   void main() {
-    gl_FragColor = texture2D(uScene, vUV) * vec4(uTint, 1.0);
+    fragColor = texture(uScene, vUV) * vec4(uTint, 1.0);
   }`,
   {
     setUniforms: (gl, loc) => gl.uniform3f(loc("uTint"), 1.0, 0.85, 0.7),
@@ -1736,7 +1738,9 @@ rt.dispose(); // free GL resources
 
 ### Material (custom shaders)
 
-A `Material` replaces a Drawable's fragment shader while reusing the engine's standard vertex shader, so transforms, the camera, and instancing keep working. Your fragment program automatically has `vTexCoord`, `vFragPos`, `vInstanceColor`, `uSampler`, `uColor`, `uOpacity`, and `uTime`. Don't redeclare them; declare any extra uniforms and push values with `set(name, value)`.
+A `Material` replaces a Drawable's fragment shader while reusing the engine's standard vertex shader, so transforms, the camera, and instancing keep working. Your fragment program (GLSL ES 3.00) automatically has `vTexCoord`, `vFragPos`, `vInstanceColor`, `uSampler`, `uColor`, `uOpacity`, and `uTime`, and writes its result to `fragColor`. Don't redeclare them; declare any extra uniforms and push values with `set(name, value)`.
+
+Older shaders written with `texture2D` and `gl_FragColor` keep working unchanged.
 
 ```javascript
 import { Material, Square2D } from "emeraldengine";
@@ -1745,9 +1749,9 @@ const dissolve = new Material(
   `
   uniform float uAmount;
   void main() {
-    vec4 c = texture2D(uSampler, vTexCoord);
+    vec4 c = texture(uSampler, vTexCoord);
     if (c.a < uAmount) discard;
-    gl_FragColor = c * uColor * uOpacity;
+    fragColor = c * uColor * uOpacity;
   }
   `,
   { uniforms: { uAmount: 0.0 } }

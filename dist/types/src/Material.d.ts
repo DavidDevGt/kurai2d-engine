@@ -7,6 +7,10 @@ export default Material;
  * also supply a custom VERTEX program: the escape hatch for effects the fixed
  * pipeline can't express (perspective tilt, vertex waves, billboarding, ...).
  *
+ * Shaders are GLSL ES 3.00: the fragment writes `fragColor`. ES 1.00 style
+ * source (`texture2D`, `gl_FragColor`, `attribute`, `varying`) is mapped onto
+ * it automatically, so older materials keep working.
+ *
  * The fragment shader always has: `vTexCoord`, `vFragPos`, `vInstanceColor`,
  * `uSampler`, `uColor`, `uOpacity`, `uTime`. A custom vertex shader gets
  * `aVertexPosition`, `aTextureCoord`, `uProjectionMatrix`, `uModelViewMatrix`,

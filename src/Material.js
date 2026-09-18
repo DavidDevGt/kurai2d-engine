@@ -1,30 +1,34 @@
 import { initShaderProgram } from "./GLUtils.js";
-import { STANDARD_VERTEX_SHADER } from "./Shaders.js";
+import {
+  STANDARD_VERTEX_SHADER,
+  LEGACY_VERTEX_PRELUDE,
+  LEGACY_FRAGMENT_PRELUDE,
+  adaptLegacyGLSL,
+} from "./Shaders.js";
 import GLManager from "./managers/GLManager.js";
 
-const MATERIAL_FRAGMENT_HEADER = `
-  #ifdef GL_ES
+const MATERIAL_FRAGMENT_HEADER = `#version 300 es
   precision highp float;
-  #endif
-  varying highp vec2 vTexCoord;
-  varying vec2 vFragPos;
-  varying vec4 vInstanceColor;
+  centroid in highp vec2 vTexCoord;
+  in vec2 vFragPos;
+  in vec4 vInstanceColor;
   uniform sampler2D uSampler;
   uniform vec4 uColor;
   uniform float uOpacity;
   uniform float uTime;
-`;
+  out vec4 fragColor;
+${LEGACY_FRAGMENT_PRELUDE}`;
 
-const MATERIAL_VERTEX_HEADER = `
-  attribute vec4 aVertexPosition;
-  attribute vec2 aTextureCoord;
+const MATERIAL_VERTEX_HEADER = `#version 300 es
+  layout(location = 0) in vec4 aVertexPosition;
+  layout(location = 1) in vec2 aTextureCoord;
   uniform mat4 uProjectionMatrix;
   uniform mat4 uModelViewMatrix;
   uniform float uTime;
-  varying highp vec2 vTexCoord;
-  varying vec2 vFragPos;
-  varying vec4 vInstanceColor;
-`;
+  centroid out highp vec2 vTexCoord;
+  out vec2 vFragPos;
+  out vec4 vInstanceColor;
+${LEGACY_VERTEX_PRELUDE}`;
 
 /**
  * @class Material
@@ -33,6 +37,10 @@ const MATERIAL_VERTEX_HEADER = `
  * working) and only overrides the fragment program. Pass `options.vertex` to
  * also supply a custom VERTEX program: the escape hatch for effects the fixed
  * pipeline can't express (perspective tilt, vertex waves, billboarding, ...).
+ *
+ * Shaders are GLSL ES 3.00: the fragment writes `fragColor`. ES 1.00 style
+ * source (`texture2D`, `gl_FragColor`, `attribute`, `varying`) is mapped onto
+ * it automatically, so older materials keep working.
  *
  * The fragment shader always has: `vTexCoord`, `vFragPos`, `vInstanceColor`,
  * `uSampler`, `uColor`, `uOpacity`, `uTime`. A custom vertex shader gets
@@ -63,13 +71,14 @@ class Material {
     this.gl = gl;
 
     const vertexSource = options.vertex
-      ? MATERIAL_VERTEX_HEADER + options.vertex
+      ? MATERIAL_VERTEX_HEADER + adaptLegacyGLSL(options.vertex)
       : STANDARD_VERTEX_SHADER;
 
     /** @private */
     this._vertexSource = vertexSource;
     /** @private */
-    this._fragmentSource = MATERIAL_FRAGMENT_HEADER + fragmentSource;
+    this._fragmentSource =
+      MATERIAL_FRAGMENT_HEADER + adaptLegacyGLSL(fragmentSource);
 
     this.program = initShaderProgram(
       gl,

@@ -1,13 +1,15 @@
 import { initVertexBuffer, initInstancedBuffer } from "./GLUtils.js";
 import Instance from "./Instance.js";
 import Drawable from "./Drawable.js";
-import { mat4 } from "gl-matrix";
+import { mat4, vec3 } from "gl-matrix";
 import GLManager from "./managers/GLManager.js";
 import GLState from "./managers/GLState.js";
 import IDManager from "./managers/IDManager.js";
 import RenderStats from "./managers/RenderStats.js";
 import RigidBody from "./components/RigidBody.js";
 import Collider from "./components/Collider.js";
+
+const Z_AXIS = [0, 0, 1];
 
 /**
  * @class InstancedTexture
@@ -93,6 +95,12 @@ class InstancedTexture extends Drawable {
     this.static = false;
     /** @private */
     this._matricesDirty = true;
+    /** @private */
+    this._scratchMatrix = mat4.create();
+    /** @private */
+    this._scratchPos = vec3.create();
+    /** @private */
+    this._scratchScale = vec3.create();
     /** The animation every instance starts with; set by playAnimation/playAnimationOnce. @private */
     this._defaultAnimation = null;
   }
@@ -237,27 +245,26 @@ class InstancedTexture extends Drawable {
    */
   updateInstanceMatrix(index) {
     if (index >= 0 && index < this.instanceCount) {
-      const matrix = mat4.create();
-      const position = [
-        this.pixelart
-          ? Math.round(this.instances[index].transform.position.x)
-          : this.instances[index].transform.position.x,
-        this.pixelart
-          ? Math.round(this.instances[index].transform.position.y)
-          : this.instances[index].transform.position.y,
-        this.instances[index].transform.position.z,
-      ];
-      const scale = [
-        this.instances[index].transform.scale.x,
-        this.instances[index].transform.scale.y,
-        1,
-      ];
-      const rotation = this.instances[index].transform.rotation;
+      const instanceTransform = this.instances[index].transform;
+      const matrix = this._scratchMatrix;
+      mat4.identity(matrix);
 
-      mat4.translate(matrix, matrix, position);
-      mat4.rotate(matrix, matrix, 0, [1, 0, 0]);
-      mat4.rotate(matrix, matrix, 0, [0, 1, 0]);
-      mat4.rotate(matrix, matrix, rotation, [0, 0, 1]);
+      const pos = this._scratchPos;
+      pos[0] = this.pixelart
+        ? Math.round(instanceTransform.position.x)
+        : instanceTransform.position.x;
+      pos[1] = this.pixelart
+        ? Math.round(instanceTransform.position.y)
+        : instanceTransform.position.y;
+      pos[2] = instanceTransform.position.z;
+
+      const scale = this._scratchScale;
+      scale[0] = instanceTransform.scale.x;
+      scale[1] = instanceTransform.scale.y;
+      scale[2] = 1;
+
+      mat4.translate(matrix, matrix, pos);
+      mat4.rotate(matrix, matrix, instanceTransform.rotation, Z_AXIS);
       mat4.scale(matrix, matrix, scale);
 
       const offset = index * 16;

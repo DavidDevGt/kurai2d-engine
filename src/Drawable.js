@@ -7,6 +7,8 @@ import GLManager from "./managers/GLManager.js";
 import RenderStats from "./managers/RenderStats.js";
 import { initVertexBuffer } from "./GLUtils.js";
 
+const Z_AXIS = [0, 0, 1];
+
 /**
  * @class Drawable
  * @description A class that represents a drawable object
@@ -103,6 +105,12 @@ class Drawable {
     this._objectTransformMatrix = mat4.create();
     /** @private */
     this._finalTransformMatrix = mat4.create();
+    /** @private */
+    this._scratchPos = vec3.create();
+    /** @private */
+    this._scratchScale = vec3.create();
+    /** @private */
+    this._scratchPivot = vec3.create();
 
     /** @private */
     this._lastTexFrame = -1;
@@ -526,6 +534,62 @@ class Drawable {
   }
 
   /**
+   * @method getFrameUV
+   * @description Computes this drawable's current normalized UV rect,
+   * honoring the active frame/region and the mirrored/flippedY flags. Pure
+   * (no GL calls, no cache bookkeeping) so it can be called from draw() and
+   * from external batched-rendering paths that need the same UVs without
+   * owning their own texcoord buffer.
+   * @returns {{left: number, right: number, top: number, bottom: number}}
+   */
+  getFrameUV() {
+    let texLeft, texRight, texTop, texBottom;
+
+    if (this._region) {
+      texLeft = this._region.right;
+      texRight = this._region.left;
+      texTop = this._region.top;
+      texBottom = this._region.bottom;
+    } else if (this.frameWidth > 0 && this.frameHeight > 0) {
+      const col = this.currentFrame % this.framesPerRow;
+      const row = Math.floor(this.currentFrame / this.framesPerRow);
+
+      const ix = 0.5 / this.textureWidth;
+      const iy = 0.5 / this.textureHeight;
+
+      texLeft = ((col + 1) * this.frameWidth) / this.textureWidth - ix;
+      texRight = (col * this.frameWidth) / this.textureWidth + ix;
+      texTop =
+        (this.textureHeight - row * this.frameHeight - this.frameHeight) /
+          this.textureHeight +
+        iy;
+      texBottom =
+        (this.textureHeight - row * this.frameHeight) / this.textureHeight - iy;
+    } else {
+      texLeft = 1.0;
+      texRight = 0.0;
+      texTop = 0.0;
+      texBottom = 1.0;
+    }
+
+    let l = texLeft;
+    let r = texRight;
+    let tp = texTop;
+    let bt = texBottom;
+    if (this.mirrored) {
+      const tmp = l;
+      l = r;
+      r = tmp;
+    }
+    if (this.flippedY) {
+      const tmp = tp;
+      tp = bt;
+      bt = tmp;
+    }
+    return { left: l, right: r, top: tp, bottom: bt };
+  }
+
+  /**
    * @method draw
    * @description Draws the object
    * @param {mat4} globalViewMatrix - The global view matrix
@@ -536,40 +600,36 @@ class Drawable {
   draw(globalViewMatrix, uniformLocation, currentTime, objectTransform) {
     let objectTransformMatrix = this._objectTransformMatrix;
     mat4.identity(objectTransformMatrix);
-    mat4.translate(
-      objectTransformMatrix,
-      objectTransformMatrix,
-      vec3.fromValues(
-        this.pixelart
-          ? Math.round(objectTransform.position.x)
-          : objectTransform.position.x,
-        this.pixelart
-          ? Math.round(objectTransform.position.y)
-          : objectTransform.position.y,
-        objectTransform.position.z
-      )
-    );
-    mat4.rotate(objectTransformMatrix, objectTransformMatrix, 0, [1, 0, 0]);
-    mat4.rotate(objectTransformMatrix, objectTransformMatrix, 0, [0, 1, 0]);
+
+    const pos = this._scratchPos;
+    pos[0] = this.pixelart
+      ? Math.round(objectTransform.position.x)
+      : objectTransform.position.x;
+    pos[1] = this.pixelart
+      ? Math.round(objectTransform.position.y)
+      : objectTransform.position.y;
+    pos[2] = objectTransform.position.z;
+    mat4.translate(objectTransformMatrix, objectTransformMatrix, pos);
+
     mat4.rotate(
       objectTransformMatrix,
       objectTransformMatrix,
       objectTransform.rotation,
-      [0, 0, 1]
+      Z_AXIS
     );
 
-    mat4.scale(
-      objectTransformMatrix,
-      objectTransformMatrix,
-      vec3.fromValues(objectTransform.scale.x, objectTransform.scale.y, 1.0)
-    );
+    const scl = this._scratchScale;
+    scl[0] = objectTransform.scale.x;
+    scl[1] = objectTransform.scale.y;
+    scl[2] = 1.0;
+    mat4.scale(objectTransformMatrix, objectTransformMatrix, scl);
 
     if (this._hasPivot) {
-      mat4.translate(
-        objectTransformMatrix,
-        objectTransformMatrix,
-        vec3.fromValues(-this._pivotX, -this._pivotY, 0)
-      );
+      const piv = this._scratchPivot;
+      piv[0] = -this._pivotX;
+      piv[1] = -this._pivotY;
+      piv[2] = 0;
+      mat4.translate(objectTransformMatrix, objectTransformMatrix, piv);
     }
 
     let finalTransformMatrix = this._finalTransformMatrix;
@@ -674,49 +734,7 @@ class Drawable {
         this._region !== this._lastRegion;
 
       if (texNeedsUpdate) {
-        let texLeft, texRight, texTop, texBottom;
-
-        if (this._region) {
-          texLeft = this._region.right;
-          texRight = this._region.left;
-          texTop = this._region.top;
-          texBottom = this._region.bottom;
-        } else if (this.frameWidth > 0 && this.frameHeight > 0) {
-          const col = this.currentFrame % this.framesPerRow;
-          const row = Math.floor(this.currentFrame / this.framesPerRow);
-
-          const ix = 0.5 / this.textureWidth;
-          const iy = 0.5 / this.textureHeight;
-
-          texLeft = ((col + 1) * this.frameWidth) / this.textureWidth - ix;
-          texRight = (col * this.frameWidth) / this.textureWidth + ix;
-          texTop =
-            (this.textureHeight - row * this.frameHeight - this.frameHeight) /
-              this.textureHeight +
-            iy;
-          texBottom =
-            (this.textureHeight - row * this.frameHeight) / this.textureHeight -
-            iy;
-        } else {
-          texLeft = 1.0;
-          texRight = 0.0;
-          texTop = 0.0;
-          texBottom = 1.0;
-        }
-        let l = texLeft;
-        let r = texRight;
-        let tp = texTop;
-        let bt = texBottom;
-        if (this.mirrored) {
-          const tmp = l;
-          l = r;
-          r = tmp;
-        }
-        if (this.flippedY) {
-          const tmp = tp;
-          tp = bt;
-          bt = tmp;
-        }
+        const { left: l, right: r, top: tp, bottom: bt } = this.getFrameUV();
         const texCoords = new Float32Array([l, bt, r, bt, l, tp, r, tp]);
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.texCoordBuffer);
         this.gl.bufferData(

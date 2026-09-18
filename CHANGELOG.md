@@ -1,5 +1,38 @@
 # Changelog
 
+## 3.3.0
+
+### Added
+
+- `new Emerald(canvas, { antialias })` option (default `true`). Pixel-art games that don't rotate sprites can pass `false` for exact pixel edges.
+- Automatic sprite batching: consecutive plain `Texture` objects that share a texture are now drawn in one call instead of one per sprite, when they are unlit, use the normal blend mode, have no `Material`, wireframe or custom pivot, and are not screen-space. Everything else keeps the per-object path. `Drawable#getFrameUV()` exposes the frame's UV rect.
+
+### Changed
+
+- All engine shaders (standard pipeline, `SpriteBatch`, `Material`, post-processing and the built-in post effects) are now GLSL ES 3.00. Custom `Material` and `PostEffect` source written in the older ES 1.00 style (`texture2D`, `gl_FragColor`, `attribute`, `varying`, and the derivatives/texture-lod `#extension` pragmas) keeps working; new code can use `texture()` and `fragColor`.
+- Texture coordinates are interpolated with `centroid`, so tiles no longer sample past their edge under MSAA.
+- Objects with equal layer and z are now ordered by texture to cut texture switches, so the paint order between overlapping sprites at the same layer and z can differ from insertion order.
+- `Drawable#draw` and `InstancedTexture` reuse scratch vectors and matrices instead of allocating every frame.
+
+### Fixed
+
+- Hairline gaps between adjacent atlas tiles at fractional zoom with MSAA on, introduced by the flush (no inset) pixel-art tile UVs in 3.2.0.
+
+## 3.2.0
+
+### Added
+
+- `ForgeLevel` now applies parallax automatically: a Forge tile layer whose `parallaxX`/`parallaxY` is below `1` scrolls slower than the world as the active camera moves (a distant background), while `1` stays locked to it.
+- Concave collider shapes from Forge are decomposed into triangles, one `PolygonCollider` each, instead of silently collapsing to their convex hull. Convex shapes still get exactly one collider.
+
+### Changed
+
+- `ForgeLevel.tileTexCoords` takes a `pixelart` flag (default `true`). With NEAREST filtering, tiles now sit flush with no half-texel UV inset, which removes slivers of the neighboring tile's color at seams. The inset is kept for linear-filtered atlases.
+
+### Docs
+
+- Fixed broken Tile Forge links in the getting-started guide.
+
 ## 3.1.0
 
 ### Added

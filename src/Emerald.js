@@ -14,6 +14,9 @@ import CameraManager from "./managers/CameraManager.js";
 import PointLight from "./lights/PointLight.js";
 import DirectionalLight from "./lights/DirectionalLight.js";
 import InstancedTexture from "./InstancedTexture.js";
+import Drawable from "./Drawable.js";
+import Texture from "./Texture.js";
+import SpriteBatch from "./SpriteBatch.js";
 import Tween from "./Tween.js";
 import Timer from "./Timer.js";
 import Coroutine from "./Coroutine.js";
@@ -24,11 +27,17 @@ import RenderTarget from "./RenderTarget.js";
  * @class Emerald
  * @description A class that represents the Emerald engine
  * @param {HTMLCanvasElement} canvas - The canvas element
+ * @param {Object} [options] - Context options
+ * @param {boolean} [options.antialias=true] - Request an MSAA drawing buffer.
+ * Pixel-art games that never rotate or scale sprites to fractional sizes can
+ * pass `false` for hard, exact pixel edges (and to avoid MSAA texture-edge
+ * artifacts); rotated sprites and shapes will then be aliased.
  */
 class Emerald {
-  constructor(canvas) {
+  constructor(canvas, options = {}) {
+    const { antialias = true } = options;
     const gl = canvas.getContext("webgl2", {
-      antialias: true,
+      antialias,
       powerPreference: "high-performance",
       desynchronized: false,
     });
@@ -57,6 +66,13 @@ class Emerald {
 
     /** @private */
     this._drawOrder = [];
+    /**
+     * Auto-batches consecutive plain-Texture objects that qualify (see
+     * _isAutoBatchable) into single draw calls instead of one drawArrays per
+     * object. See _queueBatchedDraw.
+     * @private
+     */
+    this._autoBatch = new SpriteBatch();
     /** @private */
     this._projection = mat4.create();
     /** @private */
@@ -842,12 +858,23 @@ class Emerald {
     const order = this._drawOrder;
     order.length = scene.objects.length;
     for (let i = 0; i < scene.objects.length; i++) {
-      order[i] = scene.objects[i];
+      const obj = scene.objects[i];
+      order[i] = obj;
+      const drawable = obj.getComponent(Drawable);
+      obj._sortTexKey =
+        drawable && drawable.useTexture
+          ? drawable.texturePath + "|" + (drawable.pixelart ? 1 : 0)
+          : "";
     }
     order.sort(
       (a, b) =>
         (a.layer || 0) - (b.layer || 0) ||
-        a.transform.position.z - b.transform.position.z
+        a.transform.position.z - b.transform.position.z ||
+        (a._sortTexKey < b._sortTexKey
+          ? -1
+          : a._sortTexKey > b._sortTexKey
+            ? 1
+            : 0)
     );
 
     const now = performance.now();
@@ -1053,6 +1080,9 @@ class Emerald {
 
     const ignoreLayers = camera.ignoreLayers;
     const onlyLayers = camera.onlyLayers;
+    const batch = this._autoBatch;
+    batch.begin(projectionMatrix, view);
+    let batchPending = false;
     for (const object of order) {
       const objLayer = object.layer || 0;
       if (onlyLayers && !onlyLayers.has(objLayer)) {
@@ -1068,6 +1098,22 @@ class Emerald {
       ) {
         continue;
       }
+
+      if (!object.screenSpace) {
+        const drawable = object.getComponent(Drawable);
+        if (drawable && this._isAutoBatchable(drawable)) {
+          this._queueBatchedDraw(batch, drawable, object, now);
+          batchPending = true;
+          continue;
+        }
+      }
+
+      if (batchPending) {
+        batch.flush();
+        gl.useProgram(this.programInfo.program);
+        batchPending = false;
+      }
+
       const objView = object.screenSpace ? this._identityView : view;
       object.draw(
         objView,
@@ -1075,6 +1121,81 @@ class Emerald {
         now
       );
     }
+    if (batchPending) {
+      batch.flush();
+      gl.useProgram(this.programInfo.program);
+    }
+  }
+
+  /**
+   * @method _isAutoBatchable
+   * @description Whether a Drawable can be folded into the auto-batch instead
+   * of issuing its own draw call: it must be a plain Texture (not a subclass
+   * with its own draw() override, and not InstancedTexture, which already
+   * batches via GPU instancing) with no feature the batch's minimal shader
+   * can't reproduce - no custom material (different shader), no lighting
+   * (the batch shader has no lighting terms), no wireframe mode, only the
+   * default "normal" blend mode (the batch never touches blendFunc), and no
+   * custom pivot (the batch's origin offset isn't rotated the way a pivoted
+   * transform is, so it would place a rotated sprite incorrectly).
+   * @private
+   */
+  _isAutoBatchable(drawable) {
+    return (
+      drawable.constructor === Texture &&
+      drawable.useTexture &&
+      !!drawable.texture &&
+      !drawable.isWireframe &&
+      !drawable.material &&
+      !drawable.useLighting &&
+      drawable.blendMode === "normal" &&
+      !drawable._hasPivot
+    );
+  }
+
+  /**
+   * @method _queueBatchedDraw
+   * @description Queues one Texture object's current frame into the shared
+   * SpriteBatch, reproducing the same position/rotation/scale/UV/tint/opacity
+   * math that Drawable.draw() would have applied, so batched and unbatched
+   * rendering are visually identical.
+   * @private
+   */
+  _queueBatchedDraw(batch, drawable, object, now) {
+    drawable.updateAnimation(now);
+    const uv = drawable.getFrameUV();
+
+    const transform = object.transform.parent
+      ? object.transform.getWorldTransform()
+      : object.transform;
+    const x = drawable.pixelart
+      ? Math.round(transform.position.x)
+      : transform.position.x;
+    const y = drawable.pixelart
+      ? Math.round(transform.position.y)
+      : transform.position.y;
+
+    const parentOpacity =
+      typeof object.opacity === "number"
+        ? Math.max(0, Math.min(1, object.opacity))
+        : 1.0;
+
+    batch.draw({
+      texture: drawable.texture,
+      x,
+      y,
+      w: transform.scale.x * 2,
+      h: transform.scale.y * 2,
+      rotation: transform.rotation,
+      u0: uv.right,
+      v0: uv.bottom,
+      u1: uv.left,
+      v1: uv.top,
+      r: drawable.color[0],
+      g: drawable.color[1],
+      b: drawable.color[2],
+      a: drawable.color[3] * parentOpacity,
+    });
   }
 
   /**

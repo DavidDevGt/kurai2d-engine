@@ -28,6 +28,8 @@ declare class InstancedTexture extends Drawable {
     static: boolean;
     /** @private */
     private _matricesDirty;
+    /** @private */
+    private _scratchMatrix;
     /** The animation every instance starts with; set by playAnimation/playAnimationOnce. @private */
     private _defaultAnimation;
     /**

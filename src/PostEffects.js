@@ -8,7 +8,7 @@ import { PostEffect } from "./PostProcessor.js";
  */
 class BloomEffect extends PostEffect {
   constructor(options = {}) {
-    super("bloom", `void main(){ gl_FragColor = texture2D(uScene, vUV); }`);
+    super("bloom", `void main(){ fragColor = texture(uScene, vUV); }`);
     this.threshold = options.threshold ?? 0.7;
     this.intensity = options.intensity ?? 1.0;
     this.spread = options.spread ?? 1.0;
@@ -19,9 +19,9 @@ class BloomEffect extends PostEffect {
       `
       uniform float uThreshold;
       void main() {
-        vec4 c = texture2D(uScene, vUV);
+        vec4 c = texture(uScene, vUV);
         float l = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-        gl_FragColor = l > uThreshold ? c : vec4(0.0, 0.0, 0.0, 1.0);
+        fragColor = l > uThreshold ? c : vec4(0.0, 0.0, 0.0, 1.0);
       }`,
       {
         setUniforms: (gl, loc) =>
@@ -35,12 +35,12 @@ class BloomEffect extends PostEffect {
         vec2 texel = (${horizontal ? "vec2(1.0, 0.0)" : "vec2(0.0, 1.0)"}) / uResolution * uSpread;
         float w[5];
         w[0] = 0.227027; w[1] = 0.1945946; w[2] = 0.1216216; w[3] = 0.054054; w[4] = 0.016216;
-        vec3 result = texture2D(uScene, vUV).rgb * w[0];
+        vec3 result = texture(uScene, vUV).rgb * w[0];
         for (int i = 1; i < 5; i++) {
-          result += texture2D(uScene, vUV + texel * float(i)).rgb * w[i];
-          result += texture2D(uScene, vUV - texel * float(i)).rgb * w[i];
+          result += texture(uScene, vUV + texel * float(i)).rgb * w[i];
+          result += texture(uScene, vUV - texel * float(i)).rgb * w[i];
         }
-        gl_FragColor = vec4(result, 1.0);
+        fragColor = vec4(result, 1.0);
       }`;
     const blurUniforms = {
       setUniforms: (gl, loc) => gl.uniform1f(loc("uSpread"), this.spread),
@@ -57,9 +57,9 @@ class BloomEffect extends PostEffect {
       uniform sampler2D uBloom;
       uniform float uIntensity;
       void main() {
-        vec4 scene = texture2D(uScene, vUV);
-        vec3 bloom = texture2D(uBloom, vUV).rgb;
-        gl_FragColor = vec4(scene.rgb + bloom * uIntensity, scene.a);
+        vec4 scene = texture(uScene, vUV);
+        vec3 bloom = texture(uBloom, vUV).rgb;
+        fragColor = vec4(scene.rgb + bloom * uIntensity, scene.a);
       }`,
       {
         setUniforms: (gl, loc) => {
@@ -114,9 +114,9 @@ const PostEffects = {
     return new PostEffect(
       "grayscale",
       `void main() {
-        vec4 c = texture2D(uScene, vUV);
+        vec4 c = texture(uScene, vUV);
         float l = dot(c.rgb, vec3(0.299, 0.587, 0.114));
-        gl_FragColor = vec4(vec3(l), c.a);
+        fragColor = vec4(vec3(l), c.a);
       }`
     );
   },
@@ -137,11 +137,11 @@ const PostEffects = {
       uniform float uRadius;
       uniform float uSoftness;
       void main() {
-        vec4 c = texture2D(uScene, vUV);
+        vec4 c = texture(uScene, vUV);
         float d = distance(vUV, vec2(0.5));
         float v = smoothstep(uRadius, uRadius - uSoftness, d);
         c.rgb *= mix(1.0 - uIntensity, 1.0, v);
-        gl_FragColor = c;
+        fragColor = c;
       }`,
       {
         setUniforms: (gl, loc) => {
@@ -169,12 +169,12 @@ const PostEffects = {
       uniform float uContrast;
       uniform float uSaturation;
       void main() {
-        vec4 c = texture2D(uScene, vUV);
+        vec4 c = texture(uScene, vUV);
         vec3 col = c.rgb + uBrightness;
         col = (col - 0.5) * uContrast + 0.5;
         float l = dot(col, vec3(0.299, 0.587, 0.114));
         col = mix(vec3(l), col, uSaturation);
-        gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
+        fragColor = vec4(clamp(col, 0.0, 1.0), c.a);
       }`,
       {
         setUniforms: (gl, loc) => {
@@ -200,11 +200,11 @@ const PostEffects = {
       void main() {
         vec2 dir = vUV - 0.5;
         vec2 off = dir * uAmount;
-        float r = texture2D(uScene, vUV + off).r;
-        float g = texture2D(uScene, vUV).g;
-        float b = texture2D(uScene, vUV - off).b;
-        float a = texture2D(uScene, vUV).a;
-        gl_FragColor = vec4(r, g, b, a);
+        float r = texture(uScene, vUV + off).r;
+        float g = texture(uScene, vUV).g;
+        float b = texture(uScene, vUV - off).b;
+        float a = texture(uScene, vUV).a;
+        fragColor = vec4(r, g, b, a);
       }`,
       { setUniforms: (gl, loc) => gl.uniform1f(loc("uAmount"), amount) }
     );
@@ -224,10 +224,10 @@ const PostEffects = {
       uniform float uIntensity;
       uniform float uCount;
       void main() {
-        vec4 c = texture2D(uScene, vUV);
+        vec4 c = texture(uScene, vUV);
         float s = sin(vUV.y * uCount * 3.14159265);
         c.rgb *= 1.0 - uIntensity * (0.5 + 0.5 * s) ;
-        gl_FragColor = c;
+        fragColor = c;
       }`,
       {
         setUniforms: (gl, loc) => {
@@ -262,15 +262,15 @@ const PostEffects = {
       void main() {
         vec2 uv = curve(vUV);
         if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+          fragColor = vec4(0.0, 0.0, 0.0, 1.0);
           return;
         }
-        vec4 c = texture2D(uScene, uv);
+        vec4 c = texture(uScene, uv);
         float scan = sin(uv.y * uResolution.y * 3.14159265);
         c.rgb *= 1.0 - uScanline * (0.5 + 0.5 * scan);
         float d = distance(uv, vec2(0.5));
         c.rgb *= 1.0 - uVignette * d * d * 2.0;
-        gl_FragColor = c;
+        fragColor = c;
       }`,
       {
         setUniforms: (gl, loc) => {
