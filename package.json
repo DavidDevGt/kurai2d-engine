@@ -1,6 +1,6 @@
 {
   "name": "emeraldengine",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "2D graphics library for Web",
   "type": "module",
   "main": "index.js",
