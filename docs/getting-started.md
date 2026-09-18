@@ -6,7 +6,7 @@ sound, saving, and a debug overlay to keep you honest. Every snippet uses real
 engine APIs, copy them as-is.
 
 For the full API surface see the [README](../README.md); for the level editor
-see [Emerald Tile Forge](../../emerald-tile-forge/README.md).
+see [Emerald Tile Forge](https://emerald.vahangev.com/forge).
 
 ## 1. Setup
 
@@ -135,7 +135,7 @@ velocity.x = stick.x * speed; // stick.magnitude, stick.angle also available
 
 ## 4. Tiles and levels
 
-For hand-built levels use the [Tile Forge editor](../../emerald-tile-forge/)
+For hand-built levels use the [Tile Forge editor](https://emerald.vahangev.com/forge)
 and its `EmeraldLevelLoader` (slices spritesheets, paints layers with parallax,
 entities, per-tile polygon colliders, and renders all static tiles as **one
 draw call per tileset**). For procedural grids use the engine's `Tilemap`:
