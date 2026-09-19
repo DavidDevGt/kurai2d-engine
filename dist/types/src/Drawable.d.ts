@@ -229,6 +229,14 @@ declare class Drawable {
      */
     getAnimation(): any[];
     /**
+     * @method _startFrames
+     * @description Starts a frame-list animation: the first frame shows
+     * immediately (instead of the previous animation's leftover frame until the
+     * first tick) and the next one follows after one full `animationSpeed`.
+     * @private
+     */
+    private _startFrames;
+    /**
      * @method playAnimation
      * @description Plays an animation
      * @param {Array} animation - The animation to play

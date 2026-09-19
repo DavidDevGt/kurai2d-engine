@@ -453,6 +453,24 @@ class Drawable {
   }
 
   /**
+   * @method _startFrames
+   * @description Starts a frame-list animation: the first frame shows
+   * immediately (instead of the previous animation's leftover frame until the
+   * first tick) and the next one follows after one full `animationSpeed`.
+   * @private
+   */
+  _startFrames(animation, animationSpeed, playOnce) {
+    this.animationSpeed = animationSpeed;
+    this.animationType = "array";
+    this.currentAnimationArray = animation;
+    this.currentFrame = animation[0];
+    this.currentAnimationIndex = animation.length > 1 ? 1 : 0;
+    this.lastFrameTime = performance.now();
+    this.isPlaying = true;
+    this.playOnce = playOnce;
+  }
+
+  /**
    * @method playAnimation
    * @description Plays an animation
    * @param {Array} animation - The animation to play
@@ -460,12 +478,7 @@ class Drawable {
    */
   playAnimation(animation, animationSpeed = 1000) {
     if (animation.length !== 0) {
-      this.animationSpeed = animationSpeed;
-      this.animationType = "array";
-      this.currentAnimationArray = animation;
-      this.currentAnimationIndex = 0;
-      this.isPlaying = true;
-      this.playOnce = false;
+      this._startFrames(animation, animationSpeed, false);
     } else {
       console.error(
         "[Drawable.js] | [playAnimation] > Animation cannot be empty!"
@@ -498,12 +511,7 @@ class Drawable {
     callbackFunction = null
   ) {
     if (animation.length !== 0) {
-      this.animationSpeed = animationSpeed;
-      this.animationType = "array";
-      this.currentAnimationArray = animation;
-      this.currentAnimationIndex = 0;
-      this.isPlaying = true;
-      this.playOnce = true;
+      this._startFrames(animation, animationSpeed, true);
       if (defaultAnimation !== null && defaultAnimation.length > 0) {
         this.shouldRevertAfterPlayingOnce = true;
         this.revertAnimation = defaultAnimation;

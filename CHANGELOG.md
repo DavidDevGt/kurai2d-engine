@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.4.1
+
+### Fixed
+
+- `Texture#playAnimation`, `playAnimationOnce` and `Animator#play` now show the animation's first frame immediately. Previously the sprite kept the previous animation's frame until the first animation tick, so switching directions or states could flash a stale frame for up to one frame duration.
+
 ## 3.4.0
 
 ### Added
