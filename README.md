@@ -2060,24 +2060,58 @@ import { ForgeLevel } from "emeraldengine";
 /*
     ARGUMENTS (options object):
     1. scene: Scene = Scene to add the layer objects to.
-    2. physics: Physics = (OPTIONAL) Physics engine; omit to skip colliders.
-    3. filter: Object = (OPTIONAL) Collision filter spec for the colliders.
+    2. physics: Physics = (OPTIONAL) Physics engine. Leave it out and no colliders are built.
+    3. filter: Object = (OPTIONAL) Collision filter for the colliders, e.g. { category: "ground", collidesWith: "all" } (see below).
     4. ownerObject: GameObject = (OPTIONAL) Owner reported by collision events.
     5. pixelart: boolean = (OPTIONAL) NEAREST filtering for the atlas. Default is true.
     6. layerOrder: string = (OPTIONAL) "top-first" or "bottom-first": whether layers[0] is the topmost or bottommost layer. Default is "top-first".
 */
-const map = ForgeLevel.load(levelJson, {
-  scene,
-  physics,
-  filter: LAYERS.ground,
-});
+
+// The simplest load: a visual level with no physics.
+const map = ForgeLevel.load(levelJson, { scene });
 
 emerald.setBackgroundColor(Color.fromHex(map.background));
 // map -> { tileSize, cols, rows, width, height, background, bounds,
 //          layers, colliders, objects, entityTypes, toWorld }
 ```
 
-Each tile layer is drawn as one draw call (an `InstancedTexture` per tileset, batched by atlas). Solid tiles become static bodies: full-tile runs are merged into single `BoxCollider`s, and a tile whose collider is a shape other than the full tile (a ramp, a wedge) gets a real `PolygonCollider` built from that shape's own points, not a bounding-box approximation. Object layers (spawns, pickups, triggers) come back as plain data in `map.objects`, already converted from grid cells to world space.
+**Collisions.** Physics is optional: without `physics` you get the level's graphics and nothing else. To make the solid tiles you marked in Forge collide, pass your `Physics` engine:
+
+```javascript
+const map = ForgeLevel.load(levelJson, { scene, physics });
+```
+
+If your game uses [collision layers](#collision-layers), also pass a `filter` that says which layer the level's tiles belong to. Define your layers once, before loading, and use the same names in the filter:
+
+```javascript
+import { CollisionLayers } from "emeraldengine";
+
+CollisionLayers.define("ground", "player"); // once, at startup
+
+const map = ForgeLevel.load(levelJson, {
+  scene,
+  physics,
+  filter: { category: "ground", collidesWith: "all" }, // the level's tiles are "ground"
+});
+
+// Give your player the matching side of the pair:
+//   category: "player", collidesWith: ["ground"]
+```
+
+`category` is the layer the tiles live on, and `collidesWith` lists which layers may hit them (`"all"`, or a list of names like `["player", "enemy"]`). Leave `filter` out if you don't use layers and the tiles simply collide with everything.
+
+Solid tiles become static bodies: full-tile runs are merged into single `BoxCollider`s, and a tile whose collider is a shape other than the full tile (a ramp, a wedge) gets a real `PolygonCollider` built from that shape's own points, not a bounding-box approximation.
+
+**Animated tiles.** Animations you paint in Forge (torches, water, a shining vase) play on their own with the frames and speed you set, and a solid animation collides like any other solid tile.
+
+**Entities.** Object layers (spawns, coins, enemies, checkpoints) are not drawn. They come back in `map.objects` as plain data in world coordinates, and you decide what to create:
+
+```javascript
+for (const object of map.objects) {
+  // { type, name, x, y, width, height, props }
+  if (object.type === "coin") spawnCoin(object.x, object.y);
+}
+```
 
 ## Networking (NetworkManager + Interpolator)
 

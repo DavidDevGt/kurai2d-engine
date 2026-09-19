@@ -62,6 +62,13 @@ declare class ForgeLevel {
      */
     static tileTexCoords(tileset: any, index: number, flipH?: boolean, flipV?: boolean, pixelart?: boolean): number[];
     /**
+     * @method _animationFor
+     * @description Finds the Forge animation an animated-tile gid refers to
+     * (gid = ANIM_BASE + the animation's `aid`), or null if the file has none.
+     * @private
+     */
+    private static _animationFor;
+    /**
      * @method _tilesetFor
      * @description Finds the tileset that owns a gid (the one with the largest
      * firstgid not greater than it).

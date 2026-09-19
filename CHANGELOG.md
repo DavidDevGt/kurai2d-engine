@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.4.0
+
+### Added
+
+- `ForgeLevel` now supports animated tiles painted in Forge. Each animation plays with its own frames and speed, and solid animations become colliders like any other solid tile. Previously these cells were silently dropped.
+
+### Docs
+
+- The `ForgeLevel` docs now show a self-contained example, explain that `physics` is optional, and explain how to set up collision layers with the `filter` option.
+
 ## 3.3.0
 
 ### Added

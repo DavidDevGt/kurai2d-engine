@@ -478,3 +478,189 @@ test("_buildColliders falls back to a bounding box when a collider shape is dege
   assert.ok(bodies[0].getCollider() instanceof BoxCollider);
   assert.equal(warned, true, "warns instead of throwing");
 });
+
+function animatedLevel(overrides = {}) {
+  return {
+    tileSize: 16,
+    cols: 3,
+    rows: 1,
+    tilesets: [
+      {
+        firstgid: 1,
+        name: "set",
+        image: "set.png",
+        imageW: 64,
+        imageH: 16,
+        tileW: 16,
+        tileH: 16,
+        columns: 4,
+        colliders: {},
+      },
+    ],
+    animations: [
+      {
+        aid: 1,
+        name: "Torch",
+        tilesetIndex: 0,
+        frames: [1, 2, 3],
+        speed: 100,
+        solid: false,
+      },
+    ],
+    layers: [
+      {
+        type: "tile",
+        name: "deco",
+        visible: true,
+        data: [1, 1000001, 1000001],
+      },
+    ],
+    ...overrides,
+  };
+}
+
+function loadQuiet(data, options = {}) {
+  GLManager.setGL(fakeGL());
+  GLManager.setProgramInfo({});
+  const originalError = console.error;
+  console.error = () => {};
+  try {
+    return ForgeLevel.load(data, { scene: { add() {} }, ...options });
+  } finally {
+    console.error = originalError;
+  }
+}
+
+const uv = (instanced, index) =>
+  Array.from(instanced.instanceTexCoords.slice(index * 8, index * 8 + 8));
+
+test("animated tile cells become their own batch that plays the animation's frames", () => {
+  const data = animatedLevel();
+  const map = loadQuiet(data);
+
+  assert.equal(
+    map.layers.length,
+    2,
+    "one static batch plus one animated batch"
+  );
+  const anim = map.layers.find((l) => l.animation);
+  assert.equal(anim.animation.name, "Torch");
+  assert.equal(anim.count, 2, "both painted cells share the batch");
+  assert.ok(anim.instanced.instances.every((i) => i.isAnimating));
+  assert.equal(anim.instanced.instances[0].animationSpeed, 100);
+
+  const tileset = data.tilesets[0];
+  const expected = (frame) =>
+    Array.from(
+      new Float32Array(
+        ForgeLevel.tileTexCoords(tileset, frame, false, false, true)
+      )
+    );
+
+  anim.instanced.update(1000);
+  assert.deepEqual(
+    uv(anim.instanced, 0),
+    expected(1),
+    "starts on the first frame"
+  );
+  anim.instanced.update(1100);
+  assert.deepEqual(
+    uv(anim.instanced, 0),
+    expected(2),
+    "advances after `speed` ms"
+  );
+  assert.deepEqual(
+    uv(anim.instanced, 1),
+    expected(2),
+    "every cell plays in step"
+  );
+});
+
+test("a flipped animated cell keeps its flip on every frame", () => {
+  const flippedH = (0x80000000 | 1000001) >>> 0;
+  const data = animatedLevel({
+    cols: 1,
+    layers: [{ type: "tile", name: "deco", visible: true, data: [flippedH] }],
+  });
+  const map = loadQuiet(data);
+  const anim = map.layers.find((l) => l.animation);
+
+  anim.instanced.update(1000);
+  assert.deepEqual(
+    uv(anim.instanced, 0),
+    Array.from(
+      new Float32Array(
+        ForgeLevel.tileTexCoords(data.tilesets[0], 1, true, false, true)
+      )
+    )
+  );
+});
+
+test("an animated cell with no matching animation is skipped with a single warning", () => {
+  const data = animatedLevel({
+    layers: [
+      {
+        type: "tile",
+        name: "deco",
+        visible: true,
+        data: [1000009, 1000009, 1],
+      },
+    ],
+  });
+  const warnings = [];
+  const originalWarn = console.warn;
+  console.warn = (message) => warnings.push(message);
+  let map;
+  try {
+    map = loadQuiet(data);
+  } finally {
+    console.warn = originalWarn;
+  }
+
+  assert.equal(map.layers.length, 1, "only the ordinary tile is built");
+  assert.equal(warnings.length, 1, "the same missing animation warns once");
+});
+
+test("a solid animation becomes a collider and a non-solid one does not", () => {
+  const ctx = {
+    cols: 3,
+    rows: 1,
+    tileSize: 16,
+    physics: new Physics(-600, 30),
+    filter: null,
+    ownerObject: null,
+  };
+
+  const solid = animatedLevel({
+    animations: [{ ...animatedLevel().animations[0], solid: true }],
+    layers: [{ type: "tile", name: "deco", data: [1000001, 1000001, 1000001] }],
+  });
+  const bodies = ForgeLevel._buildColliders(solid, ctx);
+  assert.equal(
+    bodies.length,
+    1,
+    "a run of solid animated cells merges into one box"
+  );
+  assert.ok(bodies[0].getCollider() instanceof BoxCollider);
+
+  const passable = animatedLevel({
+    layers: [{ type: "tile", name: "deco", data: [1000001, 1000001, 1000001] }],
+  });
+  assert.equal(ForgeLevel._buildColliders(passable, ctx).length, 0);
+});
+
+test("physics is optional: without it a level still loads and simply has no colliders", () => {
+  const map = loadQuiet(animatedLevel());
+  assert.ok(map.layers.length > 0, "layers are still built");
+  assert.deepEqual(map.colliders, []);
+
+  const solid = animatedLevel({
+    animations: [{ ...animatedLevel().animations[0], solid: true }],
+  });
+  const withPhysics = loadQuiet(solid, { physics: new Physics(-600, 30) });
+  assert.equal(
+    withPhysics.colliders.length,
+    1,
+    "solid animated cells collide when physics is given"
+  );
+});

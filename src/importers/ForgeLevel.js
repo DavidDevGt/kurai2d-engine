@@ -53,6 +53,37 @@ class ParallaxLayer extends Behaviour {
   }
 }
 
+/**
+ * @class AnimatedTiles
+ * @extends InstancedTexture
+ * @description The instanced batch for one Forge animation: every cell painted
+ * with that animation, each playing its frame list from the level file. Frames
+ * are tile indices into the tileset atlas, so UVs come from
+ * {@link ForgeLevel.tileTexCoords} (margins and spacing included).
+ * @private
+ */
+class AnimatedTiles extends InstancedTexture {
+  constructor(tileset, count, pixelart) {
+    super(tileset.image, count, 0, 0, 1, 1, 0, false, pixelart, false);
+    this.tileset = tileset;
+  }
+
+  updateInstanceTexCoords(index) {
+    const instance = this.instances[index];
+    if (!instance) return;
+    this.instanceTexCoords.set(
+      ForgeLevel.tileTexCoords(
+        this.tileset,
+        instance.frame,
+        instance._flipH === true,
+        instance._flipV === true,
+        this.pixelart
+      ),
+      index * 8
+    );
+  }
+}
+
 /** Twice the signed area of triangle (a,b,c); positive when a→b→c turns left. */
 function cross([ax, ay], [bx, by], [cx, cy]) {
   return (bx - ax) * (cy - ay) - (by - ay) * (cx - ax);
@@ -158,10 +189,29 @@ function triangulate(points) {
  * the full tile (a ramp, a wedge) gets a real {@link PolygonCollider} built
  * from that shape's own points, not a bounding-box approximation.
  *
+ * Physics is optional. Omit `physics` and no colliders are built, which is all
+ * a purely visual level needs. To get collisions, pass a `Physics` engine and,
+ * if you use collision layers, a `filter` naming the layer the level's tiles
+ * live on.
+ *
+ * Animated tiles painted in Forge play automatically, and solid ones become
+ * colliders like any other solid tile. Entity markers (spawns, coins, ...) are
+ * returned as `map.objects` for your game to place.
+ *
  * @example
+ * // Visual level only: no physics, no collision layers.
  * import level from "./level.json";
- * const map = ForgeLevel.load(level, { scene, physics, filter: LAYERS.ground });
+ * const map = ForgeLevel.load(level, { scene });
  * emerald.setBackgroundColor(Color.fromHex(map.background));
+ *
+ * @example
+ * // With collisions: define the layers first, then filter the level's colliders.
+ * CollisionLayers.define("ground", "player");
+ * const map = ForgeLevel.load(level, {
+ *   scene,
+ *   physics,
+ *   filter: { category: "ground", collidesWith: "all" },
+ * });
  */
 
 /** Tiled-compatible flip flags, packed into the high bits of a gid. */
@@ -169,6 +219,17 @@ const FLIP_H = 0x80000000;
 const FLIP_V = 0x40000000;
 const FLIP_D = 0x20000000;
 const GID_MASK = 0x1fffffff;
+
+/** Forge stores an animated tile cell as this base plus the animation's `aid`. */
+const ANIM_BASE = 1000000;
+
+/** The collider of a solid animated tile: the whole cell. */
+const FULL_TILE = [
+  [0, 0],
+  [1, 0],
+  [1, 1],
+  [0, 1],
+];
 
 class ForgeLevel {
   /**
@@ -325,12 +386,37 @@ class ForgeLevel {
     const { cols, rows, tileSize, toWorld, pixelart, depth = 0 } = ctx;
 
     const buckets = new Map();
+    const animBuckets = new Map();
+    const warnedAnims = new Set();
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
         const raw = layer.data[row * cols + col];
         if (!raw) continue;
 
         const gid = raw & GID_MASK;
+        const flipH = (raw & FLIP_H) !== 0;
+        const flipV = (raw & FLIP_V) !== 0;
+
+        if (gid >= ANIM_BASE) {
+          const animation = ForgeLevel._animationFor(data, gid);
+          const animTileset =
+            animation && data.tilesets[animation.tilesetIndex];
+          if (!animTileset) {
+            if (!warnedAnims.has(gid)) {
+              warnedAnims.add(gid);
+              console.warn(
+                `[ForgeLevel] Animated tile ${gid} has no matching animation or tileset; skipped.`
+              );
+            }
+            continue;
+          }
+          if (!animBuckets.has(animation)) {
+            animBuckets.set(animation, { tileset: animTileset, cells: [] });
+          }
+          animBuckets.get(animation).cells.push({ col, row, flipH, flipV });
+          continue;
+        }
+
         const tileset = ForgeLevel._tilesetFor(data, gid);
         if (!tileset) {
           console.warn(`[ForgeLevel] gid ${gid} matches no tileset.`);
@@ -341,30 +427,40 @@ class ForgeLevel {
           col,
           row,
           index: gid - tileset.firstgid,
-          flipH: (raw & FLIP_H) !== 0,
-          flipV: (raw & FLIP_V) !== 0,
+          flipH,
+          flipV,
           flipD: (raw & FLIP_D) !== 0,
         });
       }
     }
 
-    const built = [];
+    const groups = [];
     for (const [tileset, cells] of buckets) {
-      const instanced = new InstancedTexture(
-        tileset.image,
-        cells.length,
-        0,
-        0,
-        1,
-        1,
-        0,
-        false,
-        pixelart,
-        false
-      );
+      groups.push({ tileset, cells, animation: null });
+    }
+    for (const [animation, { tileset, cells }] of animBuckets) {
+      groups.push({ tileset, cells, animation });
+    }
+
+    const built = [];
+    for (const { tileset, cells, animation } of groups) {
+      const instanced = animation
+        ? new AnimatedTiles(tileset, cells.length, pixelart)
+        : new InstancedTexture(
+            tileset.image,
+            cells.length,
+            0,
+            0,
+            1,
+            1,
+            0,
+            false,
+            pixelart,
+            false
+          );
 
       const gameObject = new GameObject(
-        `${layer.name || "layer"}:${tileset.name}`,
+        `${layer.name || "layer"}:${animation ? animation.name : tileset.name}`,
         new Vector3(0, 0, depth),
         0,
         new Vector2(1, 1)
@@ -379,22 +475,29 @@ class ForgeLevel {
           "tile",
           new Vector3(position.x, position.y, 0),
           new Vector2(half, half),
-          0
+          0,
+          animation ? animation.frames[0] : 0
         );
-        if (cell.flipD) {
-          console.warn(
-            "[ForgeLevel] Diagonal tile flips are not supported; tile left unrotated."
+        if (animation) {
+          instance._flipH = cell.flipH;
+          instance._flipV = cell.flipV;
+          instance.playAnimation(animation.frames, animation.speed);
+        } else {
+          if (cell.flipD) {
+            console.warn(
+              "[ForgeLevel] Diagonal tile flips are not supported; tile left unrotated."
+            );
+          }
+          instance.setTexCoords(
+            ForgeLevel.tileTexCoords(
+              tileset,
+              cell.index,
+              cell.flipH,
+              cell.flipV,
+              pixelart
+            )
           );
         }
-        instance.setTexCoords(
-          ForgeLevel.tileTexCoords(
-            tileset,
-            cell.index,
-            cell.flipH,
-            cell.flipV,
-            pixelart
-          )
-        );
         instanced.addInstance(instance);
       }
 
@@ -417,6 +520,7 @@ class ForgeLevel {
         instanced,
         tileset,
         layer,
+        animation,
         count: cells.length,
         depth,
         parallax: { x: parallaxX, y: parallaxY },
@@ -492,6 +596,17 @@ class ForgeLevel {
   }
 
   /**
+   * @method _animationFor
+   * @description Finds the Forge animation an animated-tile gid refers to
+   * (gid = ANIM_BASE + the animation's `aid`), or null if the file has none.
+   * @private
+   */
+  static _animationFor(data, gid) {
+    const aid = gid - ANIM_BASE;
+    return (data.animations || []).find((a) => a.aid === aid) || null;
+  }
+
+  /**
    * @method _tilesetFor
    * @description Finds the tileset that owns a gid (the one with the largest
    * firstgid not greater than it).
@@ -538,6 +653,15 @@ class ForgeLevel {
           const raw = layer.data[row * cols + col];
           if (!raw) continue;
           const gid = raw & GID_MASK;
+          if (gid >= ANIM_BASE) {
+            const animation = ForgeLevel._animationFor(data, gid);
+            if (!animation || !animation.solid) continue;
+            shapeAt[row][col] = {
+              bounds: ForgeLevel._boundsOf(FULL_TILE),
+              points: FULL_TILE,
+            };
+            break;
+          }
           const tileset = ForgeLevel._tilesetFor(data, gid);
           if (!tileset || !tileset.colliders) continue;
           const shape = tileset.colliders[String(gid - tileset.firstgid)];
