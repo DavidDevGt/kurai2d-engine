@@ -3,6 +3,8 @@ import Texture from "./Texture.js";
 import Color from "./Color.js";
 import { Vector2, Vector3 } from "./Physics.js";
 
+/** @import Scene from "./Scene.js" */
+
 const DEFAULT_CAPACITY = 256;
 const PARK_Y = -1e9;
 
@@ -34,6 +36,7 @@ class ParticleEmitter {
    * @param {Scene} scene - Scene the particle GameObjects are added to
    * @param {Object} [options]
    * @param {string|HTMLImageElement} [options.texture] - Particle sprite source
+   * @param {string|HTMLImageElement} [options.texturePath] - Alias of `texture`
    * @param {number} [options.capacity=256] - Pool size (max live particles)
    * @param {number} [options.layer=0] - Render layer for every particle
    * @param {boolean} [options.pixelart=false] - Pixel-art sampling for the sprite

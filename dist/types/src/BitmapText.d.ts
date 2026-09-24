@@ -1,4 +1,5 @@
 export default BitmapText;
+/** @import Color from "./Color.js" */
 /**
  * BitmapText class for rendering text using a bitmap font texture
  * @param {string} text - The text to display
@@ -74,4 +75,5 @@ declare class BitmapText {
 }
 import GameObject from "./components/GameObject.js";
 import InstancedTexture from "./InstancedTexture.js";
+import type Color from "./Color.js";
 import { Vector3 } from "./Physics.js";

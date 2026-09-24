@@ -16,7 +16,7 @@ declare class Time {
      * @method setDeltaTime
      * @description Sets the delta time. The stored value is multiplied by
      * `timeScale`, and `elapsedTime` is advanced by the scaled amount. Called by
-     * `Emerald.drawScene`, but can be called manually for custom loops.
+     * `Kurai2D.drawScene`, but can be called manually for custom loops.
      * @param {number} deltaTime - The unscaled delta time in seconds
      */
     static setDeltaTime(deltaTime: number): void;

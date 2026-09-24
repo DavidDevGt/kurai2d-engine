@@ -4,6 +4,8 @@ import { Vector2, Vector3 } from "./Physics.js";
 import Color from "./Color.js";
 import Easing from "./Easing.js";
 
+/** @import Scene from "./Scene.js" */
+
 /**
  * @class ScreenEffects
  * @description In-engine full-screen camera/transition effects: fade to/from a

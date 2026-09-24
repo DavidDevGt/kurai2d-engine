@@ -76,7 +76,8 @@ declare class InputManager {
      * {@link getLastActiveDevice}.
      * @private
      */
-    private _lastActiveDevice;
+    /** @type {"keyboard"|"mouse"|"gamepad"|"touch"|null} */
+    _lastActiveDevice: "keyboard" | "mouse" | "gamepad" | "touch" | null;
     /** Pending {@link identifyButton} calls, resolved from `update()`. @private */
     private _buttonWaiters;
     /** @private */

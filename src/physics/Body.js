@@ -2,6 +2,10 @@ import { Vec2, Rot, Transform2, Sweep } from "./Math2D.js";
 import { Fixture } from "./Fixture.js";
 import { BodyType } from "./BodyType.js";
 
+/** @import World from "./World.js" */
+/** @import { Shape } from "./Shapes.js" */
+/** @import { Contact } from "./Contact.js" */
+
 /**
  * @class Body
  * @description A rigid body: a position, an orientation, and the velocity and
@@ -56,22 +60,22 @@ class Body {
 
     this.userData = def.userData ?? null;
 
-    /** Head of this body's fixture list. @private */
+    /** Head of this body's fixture list. @internal */
     this.fixtureList = null;
-    /** @private */
+    /** @internal */
     this.fixtureCount = 0;
-    /** Contacts this body currently takes part in. @private */
+    /** Contacts this body currently takes part in. @internal */
     this.contacts = [];
-    /** Joints this body currently takes part in. @private */
+    /** Joints this body currently takes part in. @internal */
     this.joints = [];
 
-    /** @private */
+    /** @internal */
     this.prev = null;
-    /** @private */
+    /** @internal */
     this.next = null;
     /** Scratch flag used while building solver islands. @private */
     this.islandFlag = false;
-    /** Index into the current island's body array. @private */
+    /** Index into the current island's body array. @internal */
     this.islandIndex = 0;
 
     if (this.type === BodyType.STATIC) {

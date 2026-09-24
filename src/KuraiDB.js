@@ -1,5 +1,5 @@
 /**
- * @class EmeraldDB
+ * @class KuraiDB
  * @description Async game-save storage on IndexedDB, the big-world companion
  * to `Storage` (localStorage). Same versioned-envelope semantics (`{v,t,data}`
  * with a `.bak` backup and forward migration), but with no ~5MB quota and no
@@ -12,18 +12,18 @@
  *
  * @example
  * // Save / load a world with schema migration:
- * await EmeraldDB.save("world", world, { version: 3 });
- * const world = await EmeraldDB.load("world", {
+ * await KuraiDB.save("world", world, { version: 3 });
+ * const world = await KuraiDB.load("world", {
  *   version: 3,
  *   fallback: makeNewWorld(),
  *   migrate: (old, from) => upgradeWorld(old, from),
  * });
  *
  * // Plain key/value (no envelope):
- * await EmeraldDB.set("settings", { volume: 0.8 });
- * const settings = await EmeraldDB.get("settings", {});
+ * await KuraiDB.set("settings", { volume: 0.8 });
+ * const settings = await KuraiDB.get("settings", {});
  */
-class EmeraldDB {
+class KuraiDB {
   /**
    * @method isSupported
    * @description Whether IndexedDB exists in this environment.
@@ -38,13 +38,13 @@ class EmeraldDB {
    * @description Sets the database and object-store names. Call before the
    * first read/write (once the database is open the names are fixed until
    * `close()`).
-   * @param {Object} [options] - { name = "emerald-db", store = "kv" }
-   * @returns {EmeraldDB} - the class, for chaining
+   * @param {Object} [options] - { name = "kurai2d-db", store = "kv" }
+   * @returns {KuraiDB} - the class, for chaining
    */
   static configure(options = {}) {
-    if (options.name) EmeraldDB._name = options.name;
-    if (options.store) EmeraldDB._store = options.store;
-    return EmeraldDB;
+    if (options.name) KuraiDB._name = options.name;
+    if (options.store) KuraiDB._store = options.store;
+    return KuraiDB;
   }
 
   /**
@@ -54,38 +54,36 @@ class EmeraldDB {
    * @private
    */
   static _open() {
-    if (EmeraldDB._db) return EmeraldDB._db;
-    if (!EmeraldDB.isSupported()) {
+    if (KuraiDB._db) return KuraiDB._db;
+    if (!KuraiDB.isSupported()) {
       return Promise.reject(
-        new Error(
-          "[EmeraldDB] > IndexedDB is not available in this environment."
-        )
+        new Error("[KuraiDB] > IndexedDB is not available in this environment.")
       );
     }
-    EmeraldDB._db = new Promise((resolve, reject) => {
-      const request = indexedDB.open(EmeraldDB._name, 1);
+    KuraiDB._db = new Promise((resolve, reject) => {
+      const request = indexedDB.open(KuraiDB._name, 1);
       request.onupgradeneeded = () => {
         const db = request.result;
-        if (!db.objectStoreNames.contains(EmeraldDB._store)) {
-          db.createObjectStore(EmeraldDB._store);
+        if (!db.objectStoreNames.contains(KuraiDB._store)) {
+          db.createObjectStore(KuraiDB._store);
         }
       };
       request.onsuccess = () => {
         const db = request.result;
         db.onversionchange = () => {
           db.close();
-          EmeraldDB._db = null;
+          KuraiDB._db = null;
         };
         resolve(db);
       };
       request.onerror = () => {
-        EmeraldDB._db = null;
+        KuraiDB._db = null;
         reject(
-          request.error || new Error("[EmeraldDB] > Failed to open database.")
+          request.error || new Error("[KuraiDB] > Failed to open database.")
         );
       };
     });
-    return EmeraldDB._db;
+    return KuraiDB._db;
   }
 
   /**
@@ -95,10 +93,10 @@ class EmeraldDB {
    * @private
    */
   static async _tx(mode, fn) {
-    const db = await EmeraldDB._open();
+    const db = await KuraiDB._open();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(EmeraldDB._store, mode);
-      const store = tx.objectStore(EmeraldDB._store);
+      const tx = db.transaction(KuraiDB._store, mode);
+      const store = tx.objectStore(KuraiDB._store);
       let result;
       const request = fn(store);
       if (request) {
@@ -109,7 +107,7 @@ class EmeraldDB {
       tx.oncomplete = () => resolve(result);
       tx.onerror = () => reject(tx.error);
       tx.onabort = () =>
-        reject(tx.error || new Error("[EmeraldDB] > Transaction aborted."));
+        reject(tx.error || new Error("[KuraiDB] > Transaction aborted."));
     });
   }
 
@@ -122,7 +120,7 @@ class EmeraldDB {
    * @returns {Promise<void>}
    */
   static async set(key, value) {
-    await EmeraldDB._tx("readwrite", (store) => store.put(value, key));
+    await KuraiDB._tx("readwrite", (store) => store.put(value, key));
   }
 
   /**
@@ -133,7 +131,7 @@ class EmeraldDB {
    * @returns {Promise<*>}
    */
   static async get(key, fallback = undefined) {
-    const value = await EmeraldDB._tx("readonly", (store) => store.get(key));
+    const value = await KuraiDB._tx("readonly", (store) => store.get(key));
     return value === undefined ? fallback : value;
   }
 
@@ -143,7 +141,7 @@ class EmeraldDB {
    * @returns {Promise<void>}
    */
   static async remove(key) {
-    await EmeraldDB._tx("readwrite", (store) => store.delete(key));
+    await KuraiDB._tx("readwrite", (store) => store.delete(key));
   }
 
   /**
@@ -152,7 +150,7 @@ class EmeraldDB {
    * @returns {Promise<string[]>}
    */
   static async keys() {
-    const keys = await EmeraldDB._tx("readonly", (store) => store.getAllKeys());
+    const keys = await KuraiDB._tx("readonly", (store) => store.getAllKeys());
     return keys || [];
   }
 
@@ -162,7 +160,7 @@ class EmeraldDB {
    * @returns {Promise<void>}
    */
   static async clear() {
-    await EmeraldDB._tx("readwrite", (store) => store.clear());
+    await KuraiDB._tx("readwrite", (store) => store.clear());
   }
 
   /**
@@ -179,10 +177,10 @@ class EmeraldDB {
     const version = options.version ?? 1;
     const envelope = { v: version, t: Date.now(), data };
     const backup = options.backup !== false;
-    const db = await EmeraldDB._open();
+    const db = await KuraiDB._open();
     return new Promise((resolve, reject) => {
-      const tx = db.transaction(EmeraldDB._store, "readwrite");
-      const store = tx.objectStore(EmeraldDB._store);
+      const tx = db.transaction(KuraiDB._store, "readwrite");
+      const store = tx.objectStore(KuraiDB._store);
       if (backup) {
         const read = store.get(key);
         read.onsuccess = () => {
@@ -195,7 +193,7 @@ class EmeraldDB {
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
       tx.onabort = () =>
-        reject(tx.error || new Error("[EmeraldDB] > Save aborted."));
+        reject(tx.error || new Error("[KuraiDB] > Save aborted."));
     });
   }
 
@@ -210,13 +208,13 @@ class EmeraldDB {
    * @returns {Promise<*>}
    */
   static async load(key, options = {}) {
-    let envelope = EmeraldDB._asEnvelope(await EmeraldDB.get(key));
+    let envelope = KuraiDB._asEnvelope(await KuraiDB.get(key));
     if (!envelope) {
-      envelope = EmeraldDB._asEnvelope(await EmeraldDB.get(key + ".bak"));
+      envelope = KuraiDB._asEnvelope(await KuraiDB.get(key + ".bak"));
     }
-    const { data, migrated } = EmeraldDB._resolveEnvelope(envelope, options);
+    const { data, migrated } = KuraiDB._resolveEnvelope(envelope, options);
     if (migrated && options.rewrite !== false) {
-      await EmeraldDB.save(key, data, { version: options.version ?? 1 });
+      await KuraiDB.save(key, data, { version: options.version ?? 1 });
     }
     return data;
   }
@@ -227,8 +225,8 @@ class EmeraldDB {
    * @returns {Promise<boolean>}
    */
   static async hasSave(key) {
-    if ((await EmeraldDB.get(key)) !== undefined) return true;
-    return (await EmeraldDB.get(key + ".bak")) !== undefined;
+    if ((await KuraiDB.get(key)) !== undefined) return true;
+    return (await KuraiDB.get(key + ".bak")) !== undefined;
   }
 
   /**
@@ -237,14 +235,14 @@ class EmeraldDB {
    * @returns {Promise<void>}
    */
   static async removeSave(key) {
-    await EmeraldDB.remove(key);
-    await EmeraldDB.remove(key + ".bak");
+    await KuraiDB.remove(key);
+    await KuraiDB.remove(key + ".bak");
   }
 
   /**
    * @method importFromStorage
    * @description Copies a save written by the localStorage `Storage` class
-   * into EmeraldDB (envelope preserved). Use once when upgrading an existing
+   * into KuraiDB (envelope preserved). Use once when upgrading an existing
    * game to IndexedDB saves.
    * @param {string} key
    * @returns {Promise<boolean>} - true if something was imported
@@ -259,11 +257,11 @@ class EmeraldDB {
     } catch {
       return false;
     }
-    await EmeraldDB.set(key, value);
+    await KuraiDB.set(key, value);
     const bak = localStorage.getItem(key + ".bak");
     if (bak != null) {
       try {
-        await EmeraldDB.set(key + ".bak", JSON.parse(bak));
+        await KuraiDB.set(key + ".bak", JSON.parse(bak));
       } catch {}
     }
     return true;
@@ -274,12 +272,12 @@ class EmeraldDB {
    * @description Closes the database handle (reopens lazily on next use).
    */
   static async close() {
-    if (!EmeraldDB._db) return;
+    if (!KuraiDB._db) return;
     try {
-      const db = await EmeraldDB._db;
+      const db = await KuraiDB._db;
       db.close();
     } catch {}
-    EmeraldDB._db = null;
+    KuraiDB._db = null;
   }
 
   /**
@@ -321,8 +319,8 @@ class EmeraldDB {
   }
 }
 
-EmeraldDB._name = "emerald-db";
-EmeraldDB._store = "kv";
-EmeraldDB._db = null;
+KuraiDB._name = "kurai2d-db";
+KuraiDB._store = "kv";
+KuraiDB._db = null;
 
-export default EmeraldDB;
+export default KuraiDB;

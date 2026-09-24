@@ -1,4 +1,7 @@
 export default Island;
+/** @import { Contact } from "./Contact.js" */
+/** @import { Joint } from "./Joint.js" */
+/** @import { Body } from "./Body.js" */
 /**
  * @class Island
  * @description A connected group of bodies, everything reachable through
@@ -49,4 +52,7 @@ declare class Island {
      */
     solve(step: any, gravity: Vec2, allowSleep: boolean): void;
 }
+import type { Body } from "./Body.js";
+import type { Contact } from "./Contact.js";
+import type { Joint } from "./Joint.js";
 import { Vec2 } from "./Math2D.js";

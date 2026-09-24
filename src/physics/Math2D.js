@@ -1,5 +1,5 @@
 /**
- * @file Math primitives for the Emerald physics engine.
+ * @file Math primitives for the Kurai2D physics engine.
  * @description Everything here works in *physics units* (meters, radians), not
  * world/pixel units. The conversion happens in {@link Physics} and
  * {@link RigidBody}, so nothing below ever needs to know about the pixel scale.
@@ -16,8 +16,9 @@
 class Vec2 {
   constructor(x = 0, y = 0) {
     if (typeof x === "object" && x !== null) {
-      this.x = x.x || 0;
-      this.y = x.y || 0;
+      const v = /** @type {{x?: number, y?: number}} */ (x);
+      this.x = v.x || 0;
+      this.y = v.y || 0;
     } else {
       this.x = x;
       this.y = y;

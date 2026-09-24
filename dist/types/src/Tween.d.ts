@@ -3,7 +3,7 @@ export default Tween;
  * @class Tween
  * @description Animates numeric properties of a target object over time with
  * easing. Tweens created via `Tween.to(...)` are auto-registered and advanced
- * by `Emerald.drawScene` (using time-scaled delta), so they respect pause/slow-mo.
+ * by `Kurai2D.drawScene` (using time-scaled delta), so they respect pause/slow-mo.
  *
  * @example
  * Tween.to(sprite.transform.position, { x: 200, y: -50 }, 0.6, {
@@ -64,7 +64,7 @@ declare namespace Tween {
     function to(target: any, props: any, duration: any, options: any): Tween;
     /**
      * @method Tween.update
-     * @description Advances all active tweens. Driven by Emerald.drawScene.
+     * @description Advances all active tweens. Driven by Kurai2D.drawScene.
      * @param {number} dt - Seconds since the last frame
      */
     function update(dt: number): void;

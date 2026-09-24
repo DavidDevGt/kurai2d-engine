@@ -1,3 +1,6 @@
+/** @import World from "./World.js" */
+/** @import { Shape } from "./Shapes.js" */
+/** @import { Contact } from "./Contact.js" */
 /**
  * @class Body
  * @description A rigid body: a position, an orientation, and the velocity and
@@ -37,22 +40,8 @@ export class Body {
     active: boolean;
     sleepTime: number;
     userData: any;
-    /** Head of this body's fixture list. @private */
-    private fixtureList;
-    /** @private */
-    private fixtureCount;
-    /** Contacts this body currently takes part in. @private */
-    private contacts;
-    /** Joints this body currently takes part in. @private */
-    private joints;
-    /** @private */
-    private prev;
-    /** @private */
-    private next;
     /** Scratch flag used while building solver islands. @private */
     private islandFlag;
-    /** Index into the current island's body array. @private */
-    private islandIndex;
     /**
      * @method createFixture
      * @description Attaches a shape to this body. The second argument may be a
@@ -431,5 +420,8 @@ import { BodyType } from "./BodyType.js";
 import { Transform2 } from "./Math2D.js";
 import { Sweep } from "./Math2D.js";
 import { Vec2 } from "./Math2D.js";
+import type { Shape } from "./Shapes.js";
 import { Fixture } from "./Fixture.js";
+import type World from "./World.js";
+import type { Contact } from "./Contact.js";
 export { BodyType };

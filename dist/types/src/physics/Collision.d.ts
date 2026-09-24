@@ -27,7 +27,10 @@ export class ManifoldPoint {
     tangentImpulse: number;
     id: number;
 }
-export type ManifoldType = ManifoldType;
+/**
+ * ManifoldType
+ */
+export type ManifoldType = number;
 export namespace ManifoldType {
     let CIRCLES: number;
     let FACE_A: number;
@@ -100,3 +103,5 @@ export function collidePolygons(manifold: Manifold, polyA: PolygonShape, xfA: Tr
 export function mulTXf(A: any, B: any): Transform2;
 import { Vec2 } from "./Math2D.js";
 import { Transform2 } from "./Math2D.js";
+import type { CircleShape } from "./Shapes.js";
+import type { PolygonShape } from "./Shapes.js";

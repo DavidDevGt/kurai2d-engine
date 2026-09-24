@@ -3,7 +3,7 @@ import Settings from "./Settings.js";
 import AABB from "./AABB.js";
 
 /**
- * @enum ShapeType
+ * @enum {string} ShapeType
  * @description The shape kinds the narrowphase knows how to collide.
  */
 const ShapeType = {

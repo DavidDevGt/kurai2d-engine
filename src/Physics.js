@@ -1,5 +1,11 @@
 import { World, Box, Vec2 as PhysicsVec2 } from "./physics/index.js";
 
+/** @import RigidBody from "./components/RigidBody.js" */
+/** @import DistanceJoint from "./physics/DistanceJoint.js" */
+/** @import RevoluteJoint from "./physics/RevoluteJoint.js" */
+/** @import { Joint } from "./physics/Joint.js" */
+/** @import { Body } from "./physics/Body.js" */
+
 /**
  * @function dispatchCollision
  * @description Calls onCollisionEnter/onCollisionExit on an object and its
@@ -23,7 +29,7 @@ function dispatchCollision(object, other, contact, type) {
 
 /**
  * @class Physics
- * @description The game-facing front end of Emerald's own rigid-body engine
+ * @description The game-facing front end of Kurai2D's own rigid-body engine
  * (see `src/physics`). It owns the {@link World}, converts between world
  * (pixel) units and physics units via `scale`, steps the simulation on a fixed
  * timestep, and routes contacts to `onCollisionEnter`/`onCollisionExit` on your
@@ -286,7 +292,7 @@ class Physics {
         ? options.length / scale
         : Math.hypot(anchorB.x - anchorA.x, anchorB.y - anchorA.y);
 
-    return this.world.createJoint({
+    const joint = this.world.createJoint({
       type: "distance",
       bodyA,
       bodyB,
@@ -297,6 +303,7 @@ class Physics {
       dampingRatio: options.dampingRatio,
       collideConnected: options.collideConnected,
     });
+    return /** @type {DistanceJoint} */ (joint);
   }
 
   /**
@@ -319,7 +326,7 @@ class Physics {
       anchor.y / this.scale
     );
 
-    return this.world.createJoint({
+    const joint = this.world.createJoint({
       type: "revolute",
       bodyA,
       bodyB,
@@ -330,6 +337,7 @@ class Physics {
       maxMotorTorque: options.maxMotorTorque,
       collideConnected: options.collideConnected,
     });
+    return /** @type {RevoluteJoint} */ (joint);
   }
 
   /**

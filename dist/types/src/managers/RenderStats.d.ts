@@ -4,8 +4,9 @@ export default RenderStats;
  * @description Frame-level render counters, incremented by every draw site in
  * the engine (Drawable, InstancedTexture, SpriteBatch, post-processing) and
  * reset at the start of each drawScene. Read the previous completed frame via
- * `RenderStats.frame` or `emerald.getRenderStats()`. DebugOverlay shows it
- * automatically.
+ * `RenderStats.frame` or `engine.getRenderStats()`. DebugOverlay shows it
+ * automatically. Counters are kept per RenderContext, so each engine reports
+ * its own numbers.
  *
  * - drawCalls:    GPU draw commands issued (the batching win shows up here)
  * - quads:        sprites/shapes drawn, counting every instance in a batch
@@ -15,20 +16,25 @@ declare class RenderStats {
     /**
      * @method beginFrame
      * @description Snapshots the counters gathered since the previous call into
-     * `frame` and zeroes the accumulators. Called by Emerald.drawScene.
+     * `frame` and zeroes the accumulators. Called by Kurai2D.drawScene.
      */
     static beginFrame(): void;
-}
-declare namespace RenderStats {
-    let drawCalls: number;
-    let quads: number;
-    let textureBinds: number;
-    namespace frame {
-        let drawCalls_1: number;
-        export { drawCalls_1 as drawCalls };
-        let quads_1: number;
-        export { quads_1 as quads };
-        let textureBinds_1: number;
-        export { textureBinds_1 as textureBinds };
-    }
+    static set drawCalls(value: number);
+    /** @returns {number} Draw calls so far in the frame in progress. */
+    static get drawCalls(): number;
+    static set quads(value: number);
+    /** @returns {number} Quads so far in the frame in progress. */
+    static get quads(): number;
+    static set textureBinds(value: number);
+    /** @returns {number} Texture binds so far in the frame in progress. */
+    static get textureBinds(): number;
+    /**
+     * Counters of the last completed frame.
+     * @returns {{drawCalls:number, quads:number, textureBinds:number}}
+     */
+    static get frame(): {
+        drawCalls: number;
+        quads: number;
+        textureBinds: number;
+    };
 }

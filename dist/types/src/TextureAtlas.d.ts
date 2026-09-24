@@ -1,4 +1,5 @@
 export default TextureAtlas;
+/** @import Drawable from "./Drawable.js" */
 /**
  * @class TextureAtlas
  * @description Loads a packed sprite atlas (image + frame rectangles) and applies
@@ -53,3 +54,4 @@ declare class TextureAtlas {
      */
     applyTo(drawable: Drawable, name: string): TextureAtlas;
 }
+import type Drawable from "./Drawable.js";

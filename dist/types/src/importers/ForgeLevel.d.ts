@@ -114,3 +114,5 @@ declare class ForgeLevel {
      */
     private static _boundsOf;
 }
+import type Scene from "../Scene.js";
+import type { Physics } from "../Physics.js";

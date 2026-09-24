@@ -29,6 +29,8 @@ class GameObject {
 
     this.layer = 0;
     this.screenSpace = false;
+    /** Never culled by the camera, even when outside the view (HUD, UI). */
+    this.alwaysVisible = false;
   }
 
   /**
@@ -59,7 +61,7 @@ class GameObject {
   /**
    * @method addComponent
    * @description Adds a component to the game object
-   * @param {Component} componentInstance - The component to add
+   * @param {Object} componentInstance - The component to add
    */
   addComponent(componentInstance) {
     const componentType = componentInstance.constructor;
@@ -75,7 +77,7 @@ class GameObject {
   /**
    * @method removeComponent
    * @description Removes a component from the game object
-   * @param {Component} component - The component to remove
+   * @param {Object} component - The component to remove
    */
   removeComponent(component) {
     if (!component || !this.components.includes(component)) {
@@ -167,7 +169,7 @@ class GameObject {
   /**
    * @method getComponent
    * @description Returns a component from the game object
-   * @param {Component} componentType - The type of component to return
+   * @param {Object} componentType - The type of component to return
    */
   getComponent(componentType) {
     return this.components.find((comp) => comp instanceof componentType);
@@ -246,7 +248,7 @@ class GameObject {
   /**
    * @method draw
    * @description Draws the game object
-   * @param {Matrix4} globalViewMatrix - The global view matrix
+   * @param {import("gl-matrix").mat4} globalViewMatrix - The global view matrix
    * @param {WebGLUniformLocation} uniformLocation - The uniform location
    * @param {number} currentTime - The current time
    */

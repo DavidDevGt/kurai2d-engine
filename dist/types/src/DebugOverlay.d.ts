@@ -1,4 +1,6 @@
 export default DebugOverlay;
+/** @import Kurai2D from "./Kurai2D.js" */
+/** @import Scene from "./Scene.js" */
 /**
  * @class DebugOverlay
  * @description A DOM panel that profiles the running game: FPS, frame-time stats
@@ -6,12 +8,12 @@ export default DebugOverlay;
  * position/zoom, JS heap usage (where available), and any extra metrics you
  * push. It can also toggle physics collider debug shapes on a scene.
  *
- * Call `update(emerald, scene)` each frame; toggle visibility with `setVisible`.
+ * Call `update(engine, scene)` each frame; toggle visibility with `setVisible`.
  *
  * @example
  * const debug = new DebugOverlay();
  * // each frame, after drawScene:
- * debug.update(emerald, scene);
+ * debug.update(engine, scene);
  * debug.setMetric("draws", spriteBatch.drawCalls);
  * debug.showColliders(scene, true); // visualize physics colliders
  */
@@ -59,10 +61,10 @@ declare class DebugOverlay {
     /**
      * @method update
      * @description Updates the overlay. Pass the engine and current scene.
-     * @param {Emerald} emerald
+     * @param {Kurai2D} engine
      * @param {Scene} scene
      */
-    update(emerald: Emerald, scene: Scene): void;
+    update(engine: Kurai2D, scene: Scene): void;
     /** @private */
     private _drawGraph;
     /**
@@ -84,3 +86,5 @@ declare class DebugOverlay {
      */
     destroy(): void;
 }
+import type Kurai2D from "./Kurai2D.js";
+import type Scene from "./Scene.js";

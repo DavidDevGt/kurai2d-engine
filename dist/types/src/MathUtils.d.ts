@@ -3,7 +3,7 @@ export default MathUtils;
  * @class MathUtils
  * @description Common math helpers for games: interpolation, clamping, angle
  * conversion, random ranges, and lightweight 2D vector operations that work on
- * any `{ x, y }` object (including the physics engine's Vec2 and Emerald
+ * any `{ x, y }` object (including the physics engine's Vec2 and Kurai2D
  * Vector2).
  */
 declare class MathUtils {

@@ -7,6 +7,8 @@ import {
 } from "./Shaders.js";
 import GLManager from "./managers/GLManager.js";
 
+/** @import Drawable from "./Drawable.js" */
+
 const MATERIAL_FRAGMENT_HEADER = `#version 300 es
   precision highp float;
   centroid in highp vec2 vTexCoord;
@@ -120,7 +122,7 @@ class Material {
    * @method _restoreGL
    * @description Recompiles the material's program and refreshes every cached
    * location after a WebGL context loss.
-   * @private
+   * @internal
    */
   _restoreGL() {
     const gl = this.gl;

@@ -33,7 +33,7 @@ declare class SpriteBatch {
      * @param {Object} [options] - { maxQuads = 2000 }
      */
     constructor(options?: any);
-    gl: WebGLRenderingContext;
+    gl: WebGL2RenderingContext;
     maxQuads: any;
     program: any;
     attribs: {

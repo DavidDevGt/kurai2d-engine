@@ -3,7 +3,7 @@ import Settings from "./Settings.js";
 import { distance } from "./Distance.js";
 
 /**
- * @enum TOIState
+ * @enum {string} TOIState
  * @description Outcome of a time-of-impact query.
  */
 const TOIState = {

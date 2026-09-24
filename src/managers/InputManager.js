@@ -256,6 +256,7 @@ class InputManager {
      * {@link getLastActiveDevice}.
      * @private
      */
+    /** @type {"keyboard"|"mouse"|"gamepad"|"touch"|null} */
     this._lastActiveDevice = null;
     /** Pending {@link identifyButton} calls, resolved from `update()`. @private */
     this._buttonWaiters = [];
@@ -754,6 +755,7 @@ class InputManager {
    * @returns {Promise<Object.<string, number>>} - { [name]: rawButtonIndex }
    */
   async calibrateGamepad(padIndex, names, onPrompt) {
+    /** @type {Object<string, number>} */
     const mapping = {};
     for (let i = 0; i < names.length; i++) {
       const name = names[i];

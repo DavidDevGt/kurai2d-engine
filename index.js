@@ -1,4 +1,4 @@
-import Emerald from "./src/Emerald.js";
+import Kurai2D from "./src/Kurai2D.js";
 import BitmapText from "./src/BitmapText.js";
 import Color from "./src/Color.js";
 import Drawable from "./src/Drawable.js";
@@ -9,7 +9,7 @@ import { Physics, Vector2, Vector3 } from "./src/Physics.js";
 import Scene from "./src/Scene.js";
 import { Square2D, Triangle2D, Circle2D } from "./src/Shapes.js";
 import Storage from "./src/Storage.js";
-import EmeraldDB from "./src/EmeraldDB.js";
+import KuraiDB from "./src/KuraiDB.js";
 import Texture from "./src/Texture.js";
 import Time from "./src/Time.js";
 import Transform from "./src/Transform.js";
@@ -68,7 +68,7 @@ import RigidBody from "./src/components/RigidBody.js";
 import Behaviour from "./src/components/Behaviour.js";
 
 export {
-  Emerald,
+  Kurai2D,
   BitmapText,
   Color,
   Drawable,
@@ -83,7 +83,7 @@ export {
   Triangle2D,
   Circle2D,
   Storage,
-  EmeraldDB,
+  KuraiDB,
   Texture,
   Time,
   Transform,

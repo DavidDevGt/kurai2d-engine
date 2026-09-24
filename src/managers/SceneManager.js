@@ -1,3 +1,7 @@
+/** @import Scene from "../Scene.js" */
+/** @import ScreenEffects from "../ScreenEffects.js" */
+/** @import Color from "../Color.js" */
+
 /**
  * @class SceneManager
  * @description Manages the scene for the game

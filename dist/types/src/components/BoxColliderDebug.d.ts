@@ -1,7 +1,8 @@
 export default BoxColliderDebug;
+/** @import RigidBody from "./RigidBody.js" */
 /**
  * @class BoxColliderDebug
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {Color} color - The color of the collider
  */
 declare class BoxColliderDebug {

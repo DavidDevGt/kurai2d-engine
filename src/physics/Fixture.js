@@ -1,6 +1,11 @@
 import AABB from "./AABB.js";
 import { Vec2 } from "./Math2D.js";
 
+/** @import { Shape } from "./Shapes.js" */
+/** @import { BroadPhase } from "./BroadPhase.js" */
+/** @import { Transform2 } from "./Math2D.js" */
+/** @import { Body } from "./Body.js" */
+
 /**
  * @class FixtureProxy
  * @description The link between a fixture and its entry in the broadphase tree.
@@ -41,7 +46,7 @@ class Fixture {
 
     /** @private */
     this.proxies = [new FixtureProxy(this, 0)];
-    /** @private */
+    /** @internal */
     this.next = null;
   }
 
@@ -296,7 +301,7 @@ class Fixture {
    * @description Registers this fixture with the broadphase.
    * @param {BroadPhase} broadPhase
    * @param {Transform2} xf
-   * @private
+   * @internal
    */
   createProxies(broadPhase, xf) {
     for (const proxy of this.proxies) {
@@ -309,7 +314,7 @@ class Fixture {
    * @method destroyProxies
    * @description Removes this fixture from the broadphase.
    * @param {BroadPhase} broadPhase
-   * @private
+   * @internal
    */
   destroyProxies(broadPhase) {
     for (const proxy of this.proxies) {

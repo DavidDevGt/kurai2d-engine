@@ -3,9 +3,11 @@ import { Vector2, Vector3 } from "../Physics.js";
 import { Circle2D } from "../Shapes.js";
 import GameObject from "./GameObject.js";
 
+/** @import RigidBody from "./RigidBody.js" */
+
 /**
  * @class CircleColliderDebug
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {Color} color - The color of the collider
  */
 class CircleColliderDebug {

@@ -23,7 +23,7 @@ declare class RenderTarget {
      * @param {Object} [options] - { depth = false, pixelart = false }
      */
     constructor(width: number, height: number, options?: any);
-    gl: WebGLRenderingContext;
+    gl: WebGL2RenderingContext;
     width: number;
     height: number;
     depth: boolean;

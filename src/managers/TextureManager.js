@@ -68,11 +68,14 @@ class TextureManager {
    * @private
    */
   static _upload(path, pixelart) {
+    // Bind to the context that asked for the texture, not whichever one is
+    // current when the image finishes loading.
+    const context = GLManager.getContext();
     return TextureManager.loadImage(path).then((image) => {
-      const gl = GLManager.getGL();
+      const gl = context.gl;
       if (!gl) {
         throw new Error(
-          "[TextureManager] > No GL context set. Create an Emerald instance before loading textures."
+          "[TextureManager] > No GL context set. Create a Kurai2D instance before loading textures."
         );
       }
 
@@ -209,10 +212,24 @@ class TextureManager {
     TextureManager.images.clear();
     TextureManager.refs.clear();
   }
+
+  /**
+   * GPU texture cache of the current RenderContext.
+   * @returns {Map<string, Promise<{texture: WebGLTexture, width: number, height: number}>>}
+   */
+  static get textures() {
+    return GLManager.getContext().textures;
+  }
+
+  /**
+   * Texture reference counts of the current RenderContext.
+   * @returns {Map<string, number>}
+   */
+  static get refs() {
+    return GLManager.getContext().textureRefs;
+  }
 }
 
 TextureManager.images = new Map();
-TextureManager.textures = new Map();
-TextureManager.refs = new Map();
 
 export default TextureManager;

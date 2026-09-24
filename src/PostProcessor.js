@@ -51,7 +51,7 @@ class PostEffect {
     this._locCache = new Map();
   }
 
-  /** @private */
+  /** @internal */
   _compile(gl) {
     if (this.program) return;
     this.program = initShaderProgram(
@@ -65,7 +65,7 @@ class PostEffect {
    * @method _restoreGL
    * @description Drops the dead program/locations after a context loss so the
    * next _compile builds fresh ones.
-   * @private
+   * @internal
    */
   _restoreGL() {
     this.program = null;
@@ -96,8 +96,8 @@ class PostEffect {
  * rendered into a texture, then each effect is applied in sequence (ping-ponging
  * between two render targets), and the final result is drawn to the screen.
  *
- * Created and managed by Emerald when you call `emerald.enablePostProcessing()`;
- * you usually just add effects via `emerald.addPostEffect(PostEffects.bloom())`.
+ * Created and managed by Kurai2D when you call `engine.enablePostProcessing()`;
+ * you usually just add effects via `engine.addPostEffect(PostEffects.bloom())`.
  */
 class PostProcessor {
   constructor() {
@@ -133,7 +133,7 @@ class PostProcessor {
    * @method _restoreGL
    * @description Rebuilds the fullscreen quad, ping-pong render targets, and
    * every effect's program after a WebGL context loss.
-   * @private
+   * @internal
    */
   _restoreGL() {
     const gl = this.gl;

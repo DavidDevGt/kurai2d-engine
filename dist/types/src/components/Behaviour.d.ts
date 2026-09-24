@@ -18,8 +18,6 @@ declare class Behaviour {
     id: string;
     parentObject: any;
     enabled: boolean;
-    /** @private */
-    private _started;
     /**
      * @member gameObject
      * @description Convenience accessor for the owning GameObject.

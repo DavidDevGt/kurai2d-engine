@@ -1,5 +1,8 @@
 import RigidBody from "./components/RigidBody.js";
 
+/** @import Kurai2D from "./Kurai2D.js" */
+/** @import Scene from "./Scene.js" */
+
 /**
  * @class DebugOverlay
  * @description A DOM panel that profiles the running game: FPS, frame-time stats
@@ -7,12 +10,12 @@ import RigidBody from "./components/RigidBody.js";
  * position/zoom, JS heap usage (where available), and any extra metrics you
  * push. It can also toggle physics collider debug shapes on a scene.
  *
- * Call `update(emerald, scene)` each frame; toggle visibility with `setVisible`.
+ * Call `update(engine, scene)` each frame; toggle visibility with `setVisible`.
  *
  * @example
  * const debug = new DebugOverlay();
  * // each frame, after drawScene:
- * debug.update(emerald, scene);
+ * debug.update(engine, scene);
  * debug.setMetric("draws", spriteBatch.drawCalls);
  * debug.showColliders(scene, true); // visualize physics colliders
  */
@@ -92,10 +95,10 @@ class DebugOverlay {
   /**
    * @method update
    * @description Updates the overlay. Pass the engine and current scene.
-   * @param {Emerald} emerald
+   * @param {Kurai2D} engine
    * @param {Scene} scene
    */
-  update(emerald, scene) {
+  update(engine, scene) {
     const now = performance.now();
     const dt = now - this._last;
     this._last = now;
@@ -125,25 +128,27 @@ class DebugOverlay {
     }
 
     const objectCount = scene && scene.objects ? scene.objects.length : 0;
-    const cameras = emerald && emerald.cameras ? emerald.cameras.length : 0;
+    const cameras = engine && engine.cameras ? engine.cameras.length : 0;
     let camLine = "";
-    if (emerald && emerald.camera && emerald.camera.getPosition) {
-      const p = emerald.camera.getPosition();
-      const z = emerald.camera.getZoom ? emerald.camera.getZoom() : 1;
+    if (engine && engine.camera && engine.camera.getPosition) {
+      const p = engine.camera.getPosition();
+      const z = engine.camera.getZoom ? engine.camera.getZoom() : 1;
       camLine = `\ncam   ${p.x.toFixed(0)}, ${p.y.toFixed(0)}  zoom ${z.toFixed(2)}`;
     }
 
     let renderLines = "";
-    if (emerald && typeof emerald.getRenderStats === "function") {
-      const rs = emerald.getRenderStats();
+    if (engine && typeof engine.getRenderStats === "function") {
+      const rs = engine.getRenderStats();
       renderLines =
         `\ndraws ${rs.drawCalls}  quads ${rs.quads}` +
         `\nbinds ${rs.textureBinds}`;
     }
 
     let memLine = "";
-    if (performance && performance.memory) {
-      const mb = performance.memory.usedJSHeapSize / (1024 * 1024);
+    // performance.memory is non-standard (Chromium only).
+    const memory = /** @type {any} */ (globalThis.performance)?.memory;
+    if (memory) {
+      const mb = memory.usedJSHeapSize / (1024 * 1024);
       memLine = `\nheap  ${mb.toFixed(1)} MB`;
     }
 

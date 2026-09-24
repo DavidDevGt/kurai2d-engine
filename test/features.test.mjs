@@ -708,16 +708,16 @@ test("built-in DirectInput profile remaps buttons for known pads", () => {
   assert.equal(input.getGamepadButton("east").pressed, true);
 });
 
-test("EmeraldDB resolves envelopes: exact version, migration, fallback", async () => {
-  const { default: EmeraldDB } = await import("../src/EmeraldDB.js");
+test("KuraiDB resolves envelopes: exact version, migration, fallback", async () => {
+  const { default: KuraiDB } = await import("../src/KuraiDB.js");
 
-  const exact = EmeraldDB._resolveEnvelope(
+  const exact = KuraiDB._resolveEnvelope(
     { v: 2, t: 1, data: { coins: 5 } },
     { version: 2 }
   );
   assert.deepEqual(exact, { data: { coins: 5 }, migrated: false });
 
-  const migrated = EmeraldDB._resolveEnvelope(
+  const migrated = KuraiDB._resolveEnvelope(
     { v: 1, t: 1, data: { level: 3 } },
     { version: 2, migrate: (old, from) => ({ ...old, coins: 0, from }) }
   );
@@ -726,34 +726,31 @@ test("EmeraldDB resolves envelopes: exact version, migration, fallback", async (
     migrated: true,
   });
 
-  const refused = EmeraldDB._resolveEnvelope(
+  const refused = KuraiDB._resolveEnvelope(
     { v: 1, t: 1, data: { x: 1 } },
     { version: 2, fallback: "F" }
   );
   assert.deepEqual(refused, { data: "F", migrated: false });
 
-  assert.deepEqual(EmeraldDB._resolveEnvelope(null, { fallback: 7 }), {
+  assert.deepEqual(KuraiDB._resolveEnvelope(null, { fallback: 7 }), {
     data: 7,
     migrated: false,
   });
 });
 
-test("EmeraldDB wraps plain pre-versioning values as version 0", async () => {
-  const { default: EmeraldDB } = await import("../src/EmeraldDB.js");
-  const env = EmeraldDB._asEnvelope({ legacy: true });
+test("KuraiDB wraps plain pre-versioning values as version 0", async () => {
+  const { default: KuraiDB } = await import("../src/KuraiDB.js");
+  const env = KuraiDB._asEnvelope({ legacy: true });
   assert.equal(env.v, 0);
   assert.deepEqual(env.data, { legacy: true });
   const real = { v: 3, t: 9, data: 1 };
-  assert.equal(EmeraldDB._asEnvelope(real), real);
-  assert.equal(EmeraldDB._asEnvelope(undefined), null);
+  assert.equal(KuraiDB._asEnvelope(real), real);
+  assert.equal(KuraiDB._asEnvelope(undefined), null);
 });
 
-test("EmeraldDB rejects cleanly where IndexedDB is unavailable", async () => {
-  const { default: EmeraldDB } = await import("../src/EmeraldDB.js");
-  assert.equal(EmeraldDB.isSupported(), false);
-  await assert.rejects(
-    () => EmeraldDB.set("k", 1),
-    /IndexedDB is not available/
-  );
-  await assert.rejects(() => EmeraldDB.get("k"), /IndexedDB is not available/);
+test("KuraiDB rejects cleanly where IndexedDB is unavailable", async () => {
+  const { default: KuraiDB } = await import("../src/KuraiDB.js");
+  assert.equal(KuraiDB.isSupported(), false);
+  await assert.rejects(() => KuraiDB.set("k", 1), /IndexedDB is not available/);
+  await assert.rejects(() => KuraiDB.get("k"), /IndexedDB is not available/);
 });

@@ -2,7 +2,7 @@ export default Timer;
 /**
  * @class Timer
  * @description Schedules delayed and repeating callbacks measured in seconds.
- * Driven by `Emerald.drawScene` with time-scaled delta, so timers honor
+ * Driven by `Kurai2D.drawScene` with time-scaled delta, so timers honor
  * pause/slow-mo. Each scheduler call returns a handle you can pass to `clear`.
  *
  * @example
@@ -44,7 +44,7 @@ declare class Timer {
     static clearAll(): void;
     /**
      * @method update
-     * @description Advances all timers. Driven by Emerald.drawScene.
+     * @description Advances all timers. Driven by Kurai2D.drawScene.
      * @param {number} dt - Seconds since the last frame
      */
     static update(dt: number): void;

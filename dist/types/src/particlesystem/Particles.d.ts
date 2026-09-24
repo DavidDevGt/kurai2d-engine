@@ -14,11 +14,11 @@ export default class Particles {
     constructor(name: any, texturePath: any, frameWidth: any, frameHeight: any, framesPerRow: any, totalFrames: any, duration?: number, settings?: any);
     settings: ParticleSettings;
     position: Vector3;
-    rotation: any;
-    scale: any;
+    rotation: number;
+    scale: import("../Physics.js").Vector2;
     particles: any[];
     duration: number;
-    offset: any;
+    offset: number;
     elapsed: number;
     active: boolean;
     instanceCount: number;

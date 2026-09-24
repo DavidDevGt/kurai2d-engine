@@ -1,5 +1,5 @@
 /**
- * @file Emerald's built-in 2D rigid-body physics engine.
+ * @file Kurai2D's built-in 2D rigid-body physics engine.
  * @description A complete, dependency-free simulation: a dynamic AABB tree
  * broadphase, SAT/GJK narrowphase, an impulse-based contact solver with warm
  * starting and island sleeping, and conservative-advancement continuous
@@ -11,7 +11,7 @@
  * this module directly only when you want a bare world.
  *
  * @example
- * import { World, Box, Vec2 } from "emeraldengine/src/physics/index.js";
+ * import { World, Box, Vec2 } from "kurai2d-engine/src/physics/index.js";
  * const world = new World({ gravity: new Vec2(0, -10) });
  * const ground = world.createBody({ type: "static", position: new Vec2(0, 0) });
  * ground.createFixture(Box(50, 1), { friction: 0.4 });

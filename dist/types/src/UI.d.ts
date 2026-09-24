@@ -1,4 +1,5 @@
 export default UI;
+/** @import Scene from "./Scene.js" */
 /**
  * @class UI
  * @description A small retained-mode UI toolkit rendered entirely with the
@@ -14,7 +15,7 @@ export default UI;
  * @example
  * const uiCam = UI.createCamera();           // onlyLayers = [UI layer]
  * gameCamera.ignoreLayer(UI.LAYER);
- * emerald.setCameras([gameCamera, uiCam]);
+ * engine.setCameras([gameCamera, uiCam]);
  *
  * const ui = new UI(scene, canvas);
  * ui.label(() => ({ x: 0, y: 200 }), "PAUSED", { font: "700 48px sans-serif" });
@@ -118,4 +119,5 @@ declare class UI {
 declare namespace UI {
     let LAYER: number;
 }
+import type Scene from "./Scene.js";
 import Camera from "./Camera.js";

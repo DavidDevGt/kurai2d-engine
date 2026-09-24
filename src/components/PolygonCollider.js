@@ -1,6 +1,9 @@
 import { PolygonShape } from "../physics/index.js";
 import Collider from "./Collider.js";
 
+/** @import GameObject from "./GameObject.js" */
+/** @import RigidBody from "./RigidBody.js" */
+
 /**
  * @class PolygonCollider
  * @extends Collider
@@ -8,7 +11,7 @@ import Collider from "./Collider.js";
  * circle can't approximate, like ramps, wedges, or arbitrary tile outlines (see
  * {@link ForgeLevel}). Points outside the convex hull of what you pass are
  * dropped automatically; a concave shape needs more than one collider.
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {Array<{x:number,y:number}>} points - Local-space points, in
  *   physics units, in any order
  * @param {number} density - The density of the collider

@@ -6,6 +6,7 @@ export default GLState;
  * for every object every frame; most calls repeat the previous value. These
  * helpers skip the GL call when the value is unchanged. Keyed by uniform
  * location, which is program-specific, so the cache is safe across objects.
+ * The caches live in the current RenderContext, one set per engine.
  */
 declare class GLState {
     /**
@@ -29,9 +30,10 @@ declare class GLState {
      * @description Cached gl.uniform4fv (compares the four components).
      */
     static uniform4fv(gl: any, location: any, value: any): void;
-}
-declare namespace GLState {
-    let ints: Map<any, any>;
-    let floats: Map<any, any>;
-    let vec4s: Map<any, any>;
+    /** @returns {Map<WebGLUniformLocation, number>} */
+    static get ints(): Map<WebGLUniformLocation, number>;
+    /** @returns {Map<WebGLUniformLocation, number>} */
+    static get floats(): Map<WebGLUniformLocation, number>;
+    /** @returns {Map<WebGLUniformLocation, number[]>} */
+    static get vec4s(): Map<WebGLUniformLocation, number[]>;
 }

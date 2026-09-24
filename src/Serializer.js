@@ -1,3 +1,5 @@
+/** @import Scene from "./Scene.js" */
+
 /**
  * @class Serializer
  * @description Saves/loads a scene to/from plain JSON. Because components hold

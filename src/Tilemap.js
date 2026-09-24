@@ -5,6 +5,8 @@ import RigidBody from "./components/RigidBody.js";
 import BoxCollider from "./components/BoxCollider.js";
 import { Vector2, Vector3 } from "./Physics.js";
 
+/** @import { Physics } from "./Physics.js" */
+
 /**
  * @class Tilemap
  * @description Builds a grid of tiles from a 2D array of frame indices, rendered

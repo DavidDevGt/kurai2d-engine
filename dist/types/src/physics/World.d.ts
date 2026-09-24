@@ -2,7 +2,7 @@ export default World;
 /**
  * @class World
  * @description The physics world: it owns the bodies, finds which ones touch,
- * and advances them all by one time step. This is Emerald's own rigid-body
+ * and advances them all by one time step. This is Kurai2D's own rigid-body
  * engine: broadphase, narrowphase, an impulse solver and continuous collision
  * detection, with no external physics dependency.
  *
@@ -271,4 +271,6 @@ import { Vec2 } from "./Math2D.js";
 import { BroadPhase } from "./BroadPhase.js";
 import { ContactManager } from "./Contact.js";
 import { Body } from "./Body.js";
+import type { Joint } from "./Joint.js";
+import type { Contact } from "./Contact.js";
 import AABB from "./AABB.js";

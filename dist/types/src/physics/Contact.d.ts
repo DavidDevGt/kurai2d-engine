@@ -24,8 +24,6 @@ export class Contact {
     restitution: any;
     tangentSpeed: number;
     /** @private */
-    private touching;
-    /** @private */
     private enabled;
     /** @private */
     private filterFlag;
@@ -35,8 +33,6 @@ export class Contact {
     private toiFlag;
     /** @private */
     private toi;
-    /** @private */
-    private _index;
     /**
      * @method getManifold
      * @description Returns the local-space manifold.
@@ -188,6 +184,9 @@ export class ContactManager {
  * @returns {boolean}
  */
 export function shouldCollide(fixtureA: Fixture, fixtureB: Fixture): boolean;
+/** @import { Fixture, FixtureProxy } from "./Fixture.js" */
+/** @import { Transform2 } from "./Math2D.js" */
+/** @import World from "./World.js" */
 /**
  * @function mixFriction
  * @description Combines two friction coefficients (geometric mean), so a slick
@@ -204,3 +203,6 @@ export function mixFriction(a: any, b: any): number;
 export function mixRestitution(a: any, b: any): any;
 import { Manifold } from "./Collision.js";
 import { WorldManifold } from "./Collision.js";
+import type { Fixture } from "./Fixture.js";
+import type World from "./World.js";
+import type { FixtureProxy } from "./Fixture.js";

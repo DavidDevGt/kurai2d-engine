@@ -3,10 +3,13 @@ import SceneManager from "../managers/SceneManager.js";
 import CircleColliderDebug from "./CircleColliderDebug.js";
 import Collider from "./Collider.js";
 
+/** @import GameObject from "./GameObject.js" */
+/** @import RigidBody from "./RigidBody.js" */
+
 /**
  * @class CircleCollider
  * @extends Collider
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {number} radius - The radius of the collider
  * @param {number} density - The density of the collider
  * @param {number} friction - The friction of the collider

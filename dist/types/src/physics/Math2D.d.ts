@@ -1,5 +1,5 @@
 /**
- * @file Math primitives for the Emerald physics engine.
+ * @file Math primitives for the Kurai2D physics engine.
  * @description Everything here works in *physics units* (meters, radians), not
  * world/pixel units. The conversion happens in {@link Physics} and
  * {@link RigidBody}, so nothing below ever needs to know about the pixel scale.
@@ -119,8 +119,8 @@ export class Vec2 {
      */
     static lerp(a: any, b: any, t: number): Vec2;
     constructor(x?: number, y?: number);
-    x: any;
-    y: any;
+    x: number;
+    y: number;
     /**
      * @method set
      * @description Sets both components in place.

@@ -1,9 +1,16 @@
 import IDManager from "../managers/IDManager.js";
 import CollisionLayers from "../CollisionLayers.js";
 
+/** Placeholder read when no filter was set; `??` supplies the defaults. */
+const NO_FILTER = { category: undefined, mask: undefined, group: undefined };
+
+/** @import GameObject from "./GameObject.js" */
+/** @import Transform from "../Transform.js" */
+/** @import RigidBody from "./RigidBody.js" */
+
 /**
  * @class Collider
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {boolean} isSensor - Whether the collider is a sensor
  * @param {GameObject} parentObject - The parent object of the collider
  */
@@ -14,8 +21,18 @@ class Collider {
     this.isSensor = isSensor;
     this.id = IDManager.generateUniqueID();
     this.name = "Collider" + this.id;
+    /**
+     * The physics fixture, created by the concrete collider subclass.
+     * @type {import("../physics/Fixture.js").Fixture|null}
+     */
+    this.collider = null;
 
-    /** @private */
+    /**
+     * @type {{category:number, mask:number, group:number}|null}
+     * @private
+     */
+    this._filter = null;
+    /** @internal */
     this._debugShape = null;
   }
 
@@ -62,7 +79,6 @@ class Collider {
         maskBits: mask,
         groupIndex: group,
       });
-      /** @private */
       this._filter = { category, mask, group };
     }
     return this;
@@ -78,7 +94,7 @@ class Collider {
   setCategory(layer) {
     const category =
       typeof layer === "number" ? layer : CollisionLayers.bit(layer);
-    const current = this._filter || {};
+    const current = this._filter || NO_FILTER;
     return this.setFilter({
       category,
       mask: current.mask ?? 0xffff,
@@ -94,7 +110,7 @@ class Collider {
    * @returns {Collider} - this
    */
   setCollidesWith(layers) {
-    const current = this._filter || {};
+    const current = this._filter || NO_FILTER;
     return this.setFilter({
       category: current.category ?? 0x0001,
       mask: CollisionLayers.mask(layers),
@@ -115,14 +131,14 @@ class Collider {
    * @method _applyFilterSpec
    * @description Applies a friendly filter spec from a constructor, accepting
    * layer names or raw bits. Spec: { category, collidesWith, group }.
-   * @private
+   * @internal
    */
   _applyFilterSpec(spec) {
     if (!spec) return;
     if (spec.category != null) this.setCategory(spec.category);
     if (spec.collidesWith != null) this.setCollidesWith(spec.collidesWith);
     if (spec.group != null) {
-      const f = this._filter || {};
+      const f = this._filter || NO_FILTER;
       this.setFilter({
         category: f.category ?? 0x0001,
         mask: f.mask ?? 0xffff,

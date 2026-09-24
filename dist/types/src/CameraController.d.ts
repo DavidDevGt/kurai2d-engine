@@ -1,18 +1,18 @@
 export default CameraController;
 /**
  * @class CameraController
- * @description Drives an Emerald camera with follow, bounds clamping, zoom and
- * screen shake. Construct it with `emerald.camera` and call `update(dt)` once
+ * @description Drives a Kurai2D camera with follow, bounds clamping, zoom and
+ * screen shake. Construct it with `engine.camera` and call `update(dt)` once
  * per frame.
  *
  * @example
- * const cam = new CameraController(emerald.camera);
+ * const cam = new CameraController(engine.camera);
  * cam.follow(player.gameObject, 0.1).setBounds(-1000, -1000, 1000, 1000);
  * // in the loop: cam.update(deltaTime);
  */
 declare class CameraController {
     /**
-     * @param {Object} camera - The Emerald camera (e.g. emerald.camera)
+     * @param {Object} camera - The Kurai2D camera (e.g. engine.camera)
      */
     constructor(camera: any);
     camera: any;

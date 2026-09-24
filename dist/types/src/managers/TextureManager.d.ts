@@ -94,9 +94,21 @@ declare class TextureManager {
      * Useful when tearing down a context or freeing memory between levels.
      */
     static clear(): void;
+    /**
+     * GPU texture cache of the current RenderContext.
+     * @returns {Map<string, Promise<{texture: WebGLTexture, width: number, height: number}>>}
+     */
+    static get textures(): Map<string, Promise<{
+        texture: WebGLTexture;
+        width: number;
+        height: number;
+    }>>;
+    /**
+     * Texture reference counts of the current RenderContext.
+     * @returns {Map<string, number>}
+     */
+    static get refs(): Map<string, number>;
 }
 declare namespace TextureManager {
     let images: Map<any, any>;
-    let textures: Map<any, any>;
-    let refs: Map<any, any>;
 }

@@ -5,11 +5,11 @@ export default PostProcessor;
  * rendered into a texture, then each effect is applied in sequence (ping-ponging
  * between two render targets), and the final result is drawn to the screen.
  *
- * Created and managed by Emerald when you call `emerald.enablePostProcessing()`;
- * you usually just add effects via `emerald.addPostEffect(PostEffects.bloom())`.
+ * Created and managed by Kurai2D when you call `engine.enablePostProcessing()`;
+ * you usually just add effects via `engine.addPostEffect(PostEffects.bloom())`.
  */
 declare class PostProcessor {
-    gl: WebGLRenderingContext;
+    gl: WebGL2RenderingContext;
     effects: any[];
     enabled: boolean;
     /** @private */
@@ -24,13 +24,6 @@ declare class PostProcessor {
     private _width;
     /** @private */
     private _height;
-    /**
-     * @method _restoreGL
-     * @description Rebuilds the fullscreen quad, ping-pong render targets, and
-     * every effect's program after a WebGL context loss.
-     * @private
-     */
-    private _restoreGL;
     /**
      * @method addEffect
      * @description Appends an effect to the chain.
@@ -104,15 +97,6 @@ export class PostEffect {
     program: any;
     /** @private */
     private _locCache;
-    /** @private */
-    private _compile;
-    /**
-     * @method _restoreGL
-     * @description Drops the dead program/locations after a context loss so the
-     * next _compile builds fresh ones.
-     * @private
-     */
-    private _restoreGL;
     loc(gl: any, name: any): any;
     /**
      * @method render

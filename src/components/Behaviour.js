@@ -20,7 +20,7 @@ class Behaviour {
     this.id = IDManager.generateUniqueID();
     this.parentObject = null;
     this.enabled = true;
-    /** @private */
+    /** @internal */
     this._started = false;
   }
 

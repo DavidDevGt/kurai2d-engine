@@ -27,6 +27,7 @@ declare class ParticleEmitter {
      * @param {Scene} scene - Scene the particle GameObjects are added to
      * @param {Object} [options]
      * @param {string|HTMLImageElement} [options.texture] - Particle sprite source
+     * @param {string|HTMLImageElement} [options.texturePath] - Alias of `texture`
      * @param {number} [options.capacity=256] - Pool size (max live particles)
      * @param {number} [options.layer=0] - Render layer for every particle
      * @param {boolean} [options.pixelart=false] - Pixel-art sampling for the sprite
@@ -36,6 +37,7 @@ declare class ParticleEmitter {
      */
     constructor(scene: Scene, options?: {
         texture?: string | HTMLImageElement;
+        texturePath?: string | HTMLImageElement;
         capacity?: number;
         layer?: number;
         pixelart?: boolean;
@@ -127,5 +129,6 @@ declare class ParticleEmitter {
      */
     destroy(): void;
 }
+import type Scene from "./Scene.js";
 import GameObject from "./components/GameObject.js";
 import Color from "./Color.js";

@@ -2,7 +2,7 @@
  * @class MathUtils
  * @description Common math helpers for games: interpolation, clamping, angle
  * conversion, random ranges, and lightweight 2D vector operations that work on
- * any `{ x, y }` object (including the physics engine's Vec2 and Emerald
+ * any `{ x, y }` object (including the physics engine's Vec2 and Kurai2D
  * Vector2).
  */
 class MathUtils {
@@ -96,6 +96,7 @@ class MathUtils {
   /**
    * Vector length (magnitude) of an `{ x, y }`.
    */
+  // @ts-expect-error Shadows Function.length on purpose; part of the public API.
   static length(v) {
     return Math.sqrt(v.x * v.x + v.y * v.y);
   }

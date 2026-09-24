@@ -1,4 +1,5 @@
 export default Instance;
+/** @import Color from "./Color.js" */
 /**
  * @class Instance
  * @description Represents an instance
@@ -13,7 +14,7 @@ declare class Instance {
     name: any;
     transform: Transform;
     id: string;
-    parent: Instance;
+    parent: import("./InstancedTexture.js").default;
     frame: number;
     isAnimating: boolean;
     animationFrames: any[];
@@ -49,9 +50,10 @@ declare class Instance {
     /**
      * @method setParent
      * @description Sets the parent of the instance
-     * @param {Instance} parent - The parent of the instance
+     * @param {import("./InstancedTexture.js").default} parent - The
+     *   InstancedTexture that renders this instance
      */
-    setParent(parent: Instance): void;
+    setParent(parent: import("./InstancedTexture.js").default): void;
     /**
      * @method playAnimation
      * @description Plays an animation with an array of frames
@@ -87,23 +89,24 @@ declare class Instance {
     /**
      * @method addComponent
      * @description Adds a component to the instance
-     * @param {Component} componentInstance - The component to add
+     * @param {Object} componentInstance - The component to add
      */
-    addComponent(componentInstance: Component): void;
+    addComponent(componentInstance: any): void;
     /**
      * @method removeComponent
      * @description Removes a component from the instance
-     * @param {Component} component - The component to remove
+     * @param {Object} component - The component to remove
      */
-    removeComponent(component: Component): void;
+    removeComponent(component: any): void;
     /**
      * @method getComponent
      * @description Gets a component from the instance
-     * @param {Component} componentType - The type of the component to get
-     * @returns {Component} - The component
+     * @param {Object} componentType - The type of the component to get
+     * @returns {Object} - The component
      */
-    getComponent(componentType: Component): Component;
+    getComponent(componentType: any): any;
 }
 import Transform from "./Transform.js";
+import type Color from "./Color.js";
 import { Vector3 } from "./Physics.js";
 import { Vector2 } from "./Physics.js";

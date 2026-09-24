@@ -8,6 +8,9 @@ import Behaviour from "../components/Behaviour.js";
 import CameraManager from "../managers/CameraManager.js";
 import { Vector2, Vector3 } from "../Physics.js";
 
+/** @import Scene from "../Scene.js" */
+/** @import { Physics } from "../Physics.js" */
+
 /**
  * @class ParallaxLayer
  * @extends Behaviour
@@ -202,7 +205,7 @@ function triangulate(points) {
  * // Visual level only: no physics, no collision layers.
  * import level from "./level.json";
  * const map = ForgeLevel.load(level, { scene });
- * emerald.setBackgroundColor(Color.fromHex(map.background));
+ * engine.setBackgroundColor(Color.fromHex(map.background));
  *
  * @example
  * // With collisions: define the layers first, then filter the level's colliders.
@@ -247,7 +250,7 @@ class ForgeLevel {
    * @returns {Object} - `{ tileSize, cols, rows, width, height, background,
    *   bounds, layers, colliders, objects, entityTypes, toWorld }`
    */
-  static load(data, options = {}) {
+  static load(data, options = /** @type {any} */ ({})) {
     const {
       scene,
       physics = null,
@@ -266,7 +269,7 @@ class ForgeLevel {
 
     /**
      * Grid cell -> world centre. Forge counts rows downwards from the top;
-     * Emerald's y axis points up, so the row term is subtracted.
+     * Kurai2D's y axis points up, so the row term is subtracted.
      */
     const toWorld = (col, row) => ({
       x: originX + (col + 0.5) * tileSize,

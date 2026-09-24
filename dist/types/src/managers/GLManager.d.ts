@@ -1,42 +1,69 @@
 export default GLManager;
 /**
  * @class GLManager
- * @description Manages the WebGL context for the game
+ * @description Gives engine objects access to the current WebGL context.
+ * State is stored per RenderContext: each Kurai2D engine owns one and makes
+ * it current while it renders, and objects created afterwards (textures,
+ * shapes, render targets...) bind to the context that was current when they
+ * were created. With a single engine this is invisible.
  */
 declare class GLManager {
     /**
-     * @method setGL
-     * @description Sets the WebGL context
-     * @param {WebGLRenderingContext} gl - The WebGL context
+     * @method getContext
+     * @description Returns the current RenderContext.
+     * @returns {RenderContext}
      */
-    static setGL(gl: WebGLRenderingContext): void;
+    static getContext(): RenderContext;
+    /**
+     * @method makeCurrent
+     * @description Makes a RenderContext current. Engines call this for you
+     * (see `Kurai2D#makeCurrent`).
+     * @param {RenderContext} context
+     */
+    static makeCurrent(context: RenderContext): void;
+    /**
+     * @method contextFor
+     * @description Returns the RenderContext registered for a WebGL context,
+     * or null.
+     * @param {object} gl
+     * @returns {RenderContext|null}
+     */
+    static contextFor(gl: object): RenderContext | null;
+    /**
+     * @method setGL
+     * @description Makes the RenderContext of `gl` current, creating it on first
+     * use. The first call adopts the initial (empty) context so state set
+     * before any engine existed is kept.
+     * @param {object} gl - The WebGL context
+     */
+    static setGL(gl: object): void;
     /**
      * @method setProgramInfo
-     * @description Sets the program info
+     * @description Sets the standard program info of the current context.
      * @param {Object} programInfo - The program info
      */
     static setProgramInfo(programInfo: any): void;
     /**
      * @method setCanvas
-     * @description Sets the canvas
+     * @description Sets the canvas of the current context.
      * @param {HTMLCanvasElement} canvas - The canvas
      */
     static setCanvas(canvas: HTMLCanvasElement): void;
     /**
      * @method getGL
-     * @description Returns the WebGL context
-     * @returns {WebGLRenderingContext} - The WebGL context
+     * @description Returns the current WebGL context.
+     * @returns {WebGL2RenderingContext} - The WebGL context
      */
-    static getGL(): WebGLRenderingContext;
+    static getGL(): WebGL2RenderingContext;
     /**
      * @method getProgramInfo
-     * @description Returns the program info
+     * @description Returns the standard program info of the current context.
      * @returns {Object} - The program info
      */
     static getProgramInfo(): any;
     /**
      * @method getCanvas
-     * @description Returns the canvas
+     * @description Returns the canvas of the current context.
      * @returns {HTMLCanvasElement} - The canvas
      */
     static getCanvas(): HTMLCanvasElement;
@@ -45,20 +72,22 @@ declare class GLManager {
      * @description Registers an object holding GL resources (buffers, textures,
      * programs) for re-creation after a WebGL context loss. The object must
      * implement `_restoreGL()`. Drawables register themselves automatically and
-     * unregister on dispose().
+     * unregister on dispose(). The object belongs to the current context.
      * @param {Object} obj - An object with a _restoreGL() method
      */
     static registerRestorable(obj: any): void;
     /**
      * @method unregisterRestorable
-     * @description Removes an object from the context-restore registry.
+     * @description Removes an object from the context-restore registry of the
+     * context it was registered in.
+     * @param {Object} obj
      */
     static unregisterRestorable(obj: any): void;
     /**
      * @method restoreAll
-     * @description Calls _restoreGL() on every registered object. Invoked by
-     * Emerald after the context is restored and the default shaders/textures
-     * have been rebuilt.
+     * @description Calls _restoreGL() on every object registered in the current
+     * context. Invoked by Kurai2D after the context is restored and the default
+     * shaders/textures have been rebuilt.
      */
     static restoreAll(): void;
     /**
@@ -74,11 +103,15 @@ declare class GLManager {
      * @returns {Float32Array}
      */
     static getProjection(): Float32Array;
+    /** @returns {WebGL2RenderingContext|null} */
+    static get gl(): WebGL2RenderingContext | null;
+    /** @returns {Object|null} */
+    static get programInfo(): any | null;
+    /** @returns {HTMLCanvasElement|null} */
+    static get canvas(): HTMLCanvasElement | null;
+    /** @returns {Float32Array|null} */
+    static get projection(): Float32Array | null;
+    /** @returns {Set<Object>} */
+    static get restorables(): Set<any>;
 }
-declare namespace GLManager {
-    let gl: any;
-    let programInfo: any;
-    let canvas: any;
-    let projection: any;
-    let restorables: Set<any>;
-}
+import RenderContext from "./RenderContext.js";

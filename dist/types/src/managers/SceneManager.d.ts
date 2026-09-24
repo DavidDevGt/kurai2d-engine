@@ -1,4 +1,7 @@
 export default SceneManager;
+/** @import Scene from "../Scene.js" */
+/** @import ScreenEffects from "../ScreenEffects.js" */
+/** @import Color from "../Color.js" */
 /**
  * @class SceneManager
  * @description Manages the scene for the game
@@ -42,3 +45,6 @@ declare class SceneManager {
 declare namespace SceneManager {
     let scene: any;
 }
+import type Scene from "../Scene.js";
+import type ScreenEffects from "../ScreenEffects.js";
+import type Color from "../Color.js";

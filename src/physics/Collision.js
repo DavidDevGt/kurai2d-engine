@@ -1,8 +1,10 @@
 import { Vec2, Rot, Transform2, EPSILON } from "./Math2D.js";
 import Settings from "./Settings.js";
 
+/** @import { CircleShape, PolygonShape } from "./Shapes.js" */
+
 /**
- * @enum ManifoldType
+ * @enum {number} ManifoldType
  * @description How a manifold's reference frame is stored: either two circle
  * centers, or a reference face on body A or on body B.
  */
@@ -13,7 +15,7 @@ const ManifoldType = {
 };
 
 /**
- * @enum ContactFeature
+ * @enum {number} ContactFeature
  * @description Whether a contact point came from a vertex or a face, used to
  * build the stable per-point id that carries impulses across steps.
  * @private

@@ -21,7 +21,10 @@ export class Shape {
      */
     getRadius(): number;
 }
-export type ShapeType = ShapeType;
+/**
+ * ShapeType
+ */
+export type ShapeType = string;
 export namespace ShapeType {
     let CIRCLE: string;
     let POLYGON: string;

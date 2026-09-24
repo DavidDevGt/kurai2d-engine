@@ -20,10 +20,6 @@ export class Joint {
     userData: any;
     /** @private */
     private islandFlag;
-    /** @private */
-    private prev;
-    /** @private */
-    private next;
     /**
      * @method getType
      * @returns {string}
@@ -50,6 +46,7 @@ export class Joint {
      */
     setUserData(data: any): void;
 }
+/** @import { Body } from "./Body.js" */
 /**
  * @description Identifies a concrete {@link Joint} subclass.
  */
@@ -57,3 +54,4 @@ export const JointType: Readonly<{
     DISTANCE: "distance";
     REVOLUTE: "revolute";
 }>;
+import type { Body } from "./Body.js";

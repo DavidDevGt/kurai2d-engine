@@ -1,4 +1,5 @@
 export default Serializer;
+/** @import Scene from "./Scene.js" */
 /**
  * @class Serializer
  * @description Saves/loads a scene to/from plain JSON. Because components hold
@@ -84,3 +85,4 @@ declare class Serializer {
 declare namespace Serializer {
     let factories: Map<any, any>;
 }
+import type Scene from "./Scene.js";

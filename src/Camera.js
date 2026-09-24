@@ -5,7 +5,7 @@ import { Vector2, Vector3 } from "./Physics.js";
  * @class Camera
  * @description A view into the scene with its own transform (position, zoom,
  * rotation) and a viewport rectangle. Multiple cameras can be added to an
- * Emerald instance to render split-screen or picture-in-picture. The viewport
+ * Kurai2D instance to render split-screen or picture-in-picture. The viewport
  * is expressed in normalized [0..1] coordinates with the origin at the
  * bottom-left of the canvas (matching WebGL).
  *
@@ -16,7 +16,7 @@ import { Vector2, Vector3 } from "./Physics.js";
  * @example
  * const left = new Camera({ viewport: { x: 0, y: 0, width: 0.5, height: 1 } });
  * const right = new Camera({ viewport: { x: 0.5, y: 0, width: 0.5, height: 1 } });
- * emerald.setCameras([left, right]);
+ * engine.setCameras([left, right]);
  */
 class Camera {
   constructor(options = {}) {

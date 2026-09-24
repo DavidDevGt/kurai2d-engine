@@ -216,7 +216,7 @@ class AudioManager {
     if (this._audioCtx) return this._audioCtx;
     const Ctx =
       typeof window !== "undefined" &&
-      (window.AudioContext || window.webkitAudioContext);
+      (window.AudioContext || /** @type {any} */ (window).webkitAudioContext);
     if (!Ctx) return null;
     try {
       this._audioCtx = new Ctx();
