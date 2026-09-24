@@ -211,14 +211,14 @@ class Coroutine {
       routine.done = true;
       return;
     }
-    routine.wait = Coroutine._interpret(result.value, routine);
+    routine.wait = Coroutine._interpret(result.value);
     if (routine.wait && routine.wait.kind === "time" && leftoverDt > 0) {
       Coroutine._step(routine, leftoverDt);
     }
   }
 
   /** @private */
-  static _interpret(value, routine) {
+  static _interpret(value) {
     if (value == null) {
       return { kind: "time", remaining: 0 };
     }

@@ -1,25 +1,107 @@
 export default Drawable;
+export type DrawableOptions = {
+    /**
+     * - The WebGL rendering context
+     */
+    gl?: WebGLRenderingContext;
+    /**
+     * - The program information
+     */
+    programInfo?: any;
+    /**
+     * - The vertices buffer
+     */
+    verticesBuffer?: WebGLBuffer;
+    /**
+     * - The texture coordinate buffer
+     */
+    texCoordBuffer?: WebGLBuffer;
+    /**
+     * - The vertices of the object
+     */
+    vertices?: any[];
+    /**
+     * - Whether to use a texture
+     */
+    useTexture?: boolean;
+    /**
+     * - The path to the texture
+     */
+    texturePath?: string;
+    /**
+     * - The width of the frame
+     */
+    frameWidth?: number;
+    /**
+     * - The height of the frame
+     */
+    frameHeight?: number;
+    /**
+     * - The number of frames per row
+     */
+    framesPerRow?: number;
+    /**
+     * - The total number of frames
+     */
+    totalFrames?: number;
+    /**
+     * - The speed of the animation
+     */
+    animationSpeed?: number;
+    /**
+     * - Whether to autoplay the animation
+     */
+    autoplay?: boolean;
+    /**
+     * - Whether to use pixel art
+     */
+    pixelart?: boolean;
+    /**
+     * - Whether to use lighting
+     */
+    useLighting?: boolean;
+};
+/**
+ * @typedef {Object} DrawableOptions
+ * @property {WebGLRenderingContext} [gl] - The WebGL rendering context
+ * @property {Object} [programInfo] - The program information
+ * @property {WebGLBuffer} [verticesBuffer] - The vertices buffer
+ * @property {WebGLBuffer} [texCoordBuffer] - The texture coordinate buffer
+ * @property {Array} [vertices] - The vertices of the object
+ * @property {boolean} [useTexture=false] - Whether to use a texture
+ * @property {string} [texturePath=""] - The path to the texture
+ * @property {number} [frameWidth=0] - The width of the frame
+ * @property {number} [frameHeight=0] - The height of the frame
+ * @property {number} [framesPerRow=1] - The number of frames per row
+ * @property {number} [totalFrames=1] - The total number of frames
+ * @property {number} [animationSpeed=1000] - The speed of the animation
+ * @property {boolean} [autoplay=true] - Whether to autoplay the animation
+ * @property {boolean} [pixelart=false] - Whether to use pixel art
+ * @property {boolean} [useLighting=true] - Whether to use lighting
+ */
 /**
  * @class Drawable
  * @description A class that represents a drawable object
- * @param {WebGLRenderingContext} gl - The WebGL rendering context
- * @param {Object} programInfo - The program information
- * @param {WebGLBuffer} verticesBuffer - The vertices buffer
- * @param {WebGLBuffer} texCoordBuffer - The texture coordinate buffer
- * @param {Array} vertices - The vertices of the object
- * @param {boolean} useTexture - Whether to use a texture
- * @param {string} texturePath - The path to the texture
- * @param {number} frameWidth - The width of the frame
- * @param {number} frameHeight - The height of the frame
- * @param {number} framesPerRow - The number of frames per row
- * @param {number} totalFrames - The total number of frames
- * @param {number} animationSpeed - The speed of the animation
- * @param {boolean} autoplay - Whether to autoplay the animation
- * @param {boolean} pixelart - Whether to use pixel art
- * @param {boolean} useLighting - Whether to use lighting
+ * @param {DrawableOptions} [options] - Configuration for the drawable
  */
 declare class Drawable {
-    constructor(gl: any, programInfo: any, verticesBuffer: any, texCoordBuffer: any, vertices: any, useTexture: any, texturePath: any, frameWidth?: number, frameHeight?: number, framesPerRow?: number, totalFrames?: number, animationSpeed?: number, autoplay?: boolean, pixelart?: boolean, useLighting?: boolean);
+    constructor({ gl, programInfo, verticesBuffer, texCoordBuffer, vertices, useTexture, texturePath, frameWidth, frameHeight, framesPerRow, totalFrames, animationSpeed, autoplay, pixelart, useLighting, }?: {
+        gl?: any;
+        programInfo?: any;
+        verticesBuffer?: any;
+        texCoordBuffer?: any;
+        vertices?: any;
+        useTexture?: boolean;
+        texturePath?: string;
+        frameWidth?: number;
+        frameHeight?: number;
+        framesPerRow?: number;
+        totalFrames?: number;
+        animationSpeed?: number;
+        autoplay?: boolean;
+        pixelart?: boolean;
+        useLighting?: boolean;
+    });
     gl: any;
     programInfo: any;
     id: string;
@@ -27,9 +109,9 @@ declare class Drawable {
     texCoordBuffer: any;
     vertices: any;
     color: vec4;
-    texturePath: any;
+    texturePath: string;
     texture: WebGLTexture;
-    useTexture: any;
+    useTexture: boolean;
     pixelart: boolean;
     /** @private */
     private _texRetained;
@@ -207,9 +289,9 @@ declare class Drawable {
     /**
      * @method getAnimation
      * @description Gets the animation
-     * @returns {Array} - The animation
+     * @returns {Array|string|null} - The animation
      */
-    getAnimation(): any[];
+    getAnimation(): any[] | string | null;
     /**
      * @method _startFrames
      * @description Starts a frame-list animation: the first frame shows
@@ -269,13 +351,6 @@ declare class Drawable {
      * @param {Object} objectTransform - The object transform
      */
     draw(globalViewMatrix: mat4, uniformLocation: WebGLUniformLocation, currentTime: number, objectTransform: any): void;
-    /**
-     * @method loadImage
-     * @description Loads an image
-     * @param {string} path - The path to the image
-     * @returns {Promise} - The promise
-     */
-    loadImage(path: string): Promise<any>;
 }
 import { vec4 } from "gl-matrix";
 import type Material from "./Material.js";

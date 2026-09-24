@@ -28,23 +28,14 @@ class CanvasText extends Drawable {
     const texCoords = [1.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0];
     const texCoordBuffer = initVertexBuffer(gl, texCoords);
 
-    super(
+    super({
       gl,
-      GLManager.getProgramInfo(),
+      programInfo: GLManager.getProgramInfo(),
       verticesBuffer,
-      texCoordBuffer,
+      texCoordBuffer: texCoordBuffer,
       vertices,
-      false,
-      "",
-      0,
-      0,
-      1,
-      1,
-      0,
-      false,
-      false,
-      options.useLighting === true
-    );
+      useLighting: options.useLighting === true,
+    });
 
     this.font = options.font || "24px sans-serif";
     this.fillStyle = options.color || "#ffffff";

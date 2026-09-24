@@ -169,7 +169,7 @@ class Tilemap {
           c++;
           continue;
         }
-        let runStart = c;
+        const runStart = c;
         while (c < row.length && isSolid(row[c])) c++;
         const runLen = c - runStart;
 

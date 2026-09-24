@@ -105,8 +105,8 @@ export default class Particles {
       baseVelocity.x * baseVelocity.x + baseVelocity.y * baseVelocity.y
     );
     for (let i = 0; i < numberOfParticles; i++) {
-      let angle = Math.atan2(baseDirection.y, baseDirection.x);
-      let spread = this.settings.spread;
+      const angle = Math.atan2(baseDirection.y, baseDirection.x);
+      const spread = this.settings.spread;
       const angleVariation = (Math.random() - 0.5) * spread;
       const finalAngle = angle + angleVariation;
       const velocity = {

@@ -85,7 +85,7 @@ class Storage {
         if (prev != null) {
           try {
             localStorage.setItem(key + ".bak", prev);
-          } catch (_) {}
+          } catch {}
         }
       }
       localStorage.setItem(key, serialized);
@@ -135,7 +135,7 @@ class Storage {
     let env;
     try {
       env = Storage._unwrap(localStorage.getItem(key));
-    } catch (e) {
+    } catch {
       try {
         env = Storage._unwrap(localStorage.getItem(key + ".bak"));
         if (env !== undefined) {
@@ -143,7 +143,7 @@ class Storage {
             `[Storage] "${key}" was corrupt; recovered from backup.`
           );
         }
-      } catch (_) {
+      } catch {
         env = undefined;
       }
     }

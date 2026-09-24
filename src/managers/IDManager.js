@@ -29,7 +29,7 @@ class IDManager {
    * @returns {string} - The unique ID
    */
   static generateUniqueID() {
-    var id;
+    let id;
     do {
       id = IDManager.generateID();
     } while (IDManager.existingIDs.has(id));

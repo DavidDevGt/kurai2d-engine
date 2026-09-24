@@ -17,7 +17,7 @@ import GLManager from "./managers/GLManager.js";
  */
 class Texture extends Drawable {
   constructor(
-    texturePath = {},
+    texturePath = "",
     frameWidth = 0,
     frameHeight = 0,
     framesPerRow = 1,
@@ -35,23 +35,23 @@ class Texture extends Drawable {
       textureCoordinates
     );
 
-    super(
-      GLManager.getGL(),
-      GLManager.getProgramInfo(),
+    super({
+      gl: GLManager.getGL(),
+      programInfo: GLManager.getProgramInfo(),
       verticesBuffer,
       texCoordBuffer,
       vertices,
-      true,
+      useTexture: true,
       texturePath,
       frameWidth,
       frameHeight,
       framesPerRow,
       totalFrames,
       animationSpeed,
-      autoPlay,
+      autoplay: autoPlay,
       pixelart,
-      useLighting
-    );
+      useLighting,
+    });
   }
 }
 

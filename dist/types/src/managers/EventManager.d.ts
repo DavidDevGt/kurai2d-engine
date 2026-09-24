@@ -8,9 +8,16 @@ export default EventManager;
  * @param {HTMLCanvasElement} canvas - The canvas element
  * @param {Scene} scene - The scene
  * @param {Camera} camera - The camera
+ * @param {Object} [options] - Optional configuration
+ * @param {import("../Kurai2D.js").default} [options.engine] - The engine
+ *   instance. When provided, `screenToWorld` delegates to
+ *   `engine.screenToWorld` which correctly handles design resolution, DPR
+ *   and camera rotation. Without it, a simpler fallback that ignores
+ *   design resolution is used.
  */
 declare class EventManager {
-    constructor(canvas: any, scene: any, camera: any);
+    constructor(canvas: any, scene: any, camera: any, options?: {});
+    engine: any;
     scene: any;
     camera: any;
     canvas: any;
@@ -93,8 +100,11 @@ declare class EventManager {
     addClickEvent(object: GameObject, func: Function): void;
     /**
      * @method screenToWorld
-     * @description Converts screen (client) coordinates to world coordinates,
-     * accounting for camera position, zoom, and CSS/backing pixel ratio.
+     * @description Converts screen (client) coordinates to world coordinates.
+     * When an engine reference is available (passed via the constructor
+     * `options.engine`), delegates to `engine.screenToWorld` which correctly
+     * handles design resolution, device-pixel ratio, and camera rotation.
+     * Falls back to a simpler projection when no engine is set.
      * @param {number} clientX - The clientX of the pointer
      * @param {number} clientY - The clientY of the pointer
      * @returns {{x: number, y: number}} - The world-space coordinates

@@ -16,21 +16,13 @@ class Square2D extends Drawable {
       textureCoordinates
     );
 
-    super(
-      GLManager.getGL(),
-      GLManager.getProgramInfo(),
+    super({
+      gl: GLManager.getGL(),
+      programInfo: GLManager.getProgramInfo(),
       verticesBuffer,
       texCoordBuffer,
       vertices,
-      false,
-      "",
-      0,
-      0,
-      0,
-      0,
-      0,
-      false
-    );
+    });
   }
 }
 
@@ -49,21 +41,13 @@ class Triangle2D extends Drawable {
       textureCoordinates
     );
 
-    super(
-      GLManager.getGL(),
-      GLManager.getProgramInfo(),
+    super({
+      gl: GLManager.getGL(),
+      programInfo: GLManager.getProgramInfo(),
       verticesBuffer,
       texCoordBuffer,
       vertices,
-      false,
-      "",
-      0,
-      0,
-      0,
-      0,
-      0,
-      false
-    );
+    });
   }
 }
 
@@ -95,23 +79,14 @@ class Circle2D extends Drawable {
       textureCoordinates
     );
 
-    super(
-      GLManager.getGL(),
-      GLManager.getProgramInfo(),
+    super({
+      gl: GLManager.getGL(),
+      programInfo: GLManager.getProgramInfo(),
       verticesBuffer,
       texCoordBuffer,
       vertices,
-      false,
-      "",
-      0,
-      0,
-      0,
-      0,
-      0,
-      false,
-      true,
-      false
-    );
+      pixelart: true,
+    });
   }
 }
 

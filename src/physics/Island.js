@@ -132,8 +132,8 @@ class Island {
       const pos = this.positions[i];
       const vel = this.velocities[i];
 
-      let translationX = h * vel.v.x;
-      let translationY = h * vel.v.y;
+      const translationX = h * vel.v.x;
+      const translationY = h * vel.v.y;
       const translationSq =
         translationX * translationX + translationY * translationY;
       if (translationSq > Settings.maxTranslation * Settings.maxTranslation) {

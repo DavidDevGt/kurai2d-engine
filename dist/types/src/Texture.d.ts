@@ -13,6 +13,6 @@ export default Texture;
  * @param {boolean} useLighting - Whether the texture should react to lighting
  */
 declare class Texture extends Drawable {
-    constructor(texturePath?: {}, frameWidth?: number, frameHeight?: number, framesPerRow?: number, totalFrames?: number, animationSpeed?: number, autoPlay?: boolean, pixelart?: boolean, useLighting?: boolean);
+    constructor(texturePath?: string, frameWidth?: number, frameHeight?: number, framesPerRow?: number, totalFrames?: number, animationSpeed?: number, autoPlay?: boolean, pixelart?: boolean, useLighting?: boolean);
 }
 import Drawable from "./Drawable.js";

@@ -12,33 +12,38 @@ import { initVertexBuffer } from "./GLUtils.js";
 const Z_AXIS = [0, 0, 1];
 
 /**
+ * @typedef {Object} DrawableOptions
+ * @property {WebGLRenderingContext} [gl] - The WebGL rendering context
+ * @property {Object} [programInfo] - The program information
+ * @property {WebGLBuffer} [verticesBuffer] - The vertices buffer
+ * @property {WebGLBuffer} [texCoordBuffer] - The texture coordinate buffer
+ * @property {Array} [vertices] - The vertices of the object
+ * @property {boolean} [useTexture=false] - Whether to use a texture
+ * @property {string} [texturePath=""] - The path to the texture
+ * @property {number} [frameWidth=0] - The width of the frame
+ * @property {number} [frameHeight=0] - The height of the frame
+ * @property {number} [framesPerRow=1] - The number of frames per row
+ * @property {number} [totalFrames=1] - The total number of frames
+ * @property {number} [animationSpeed=1000] - The speed of the animation
+ * @property {boolean} [autoplay=true] - Whether to autoplay the animation
+ * @property {boolean} [pixelart=false] - Whether to use pixel art
+ * @property {boolean} [useLighting=true] - Whether to use lighting
+ */
+
+/**
  * @class Drawable
  * @description A class that represents a drawable object
- * @param {WebGLRenderingContext} gl - The WebGL rendering context
- * @param {Object} programInfo - The program information
- * @param {WebGLBuffer} verticesBuffer - The vertices buffer
- * @param {WebGLBuffer} texCoordBuffer - The texture coordinate buffer
- * @param {Array} vertices - The vertices of the object
- * @param {boolean} useTexture - Whether to use a texture
- * @param {string} texturePath - The path to the texture
- * @param {number} frameWidth - The width of the frame
- * @param {number} frameHeight - The height of the frame
- * @param {number} framesPerRow - The number of frames per row
- * @param {number} totalFrames - The total number of frames
- * @param {number} animationSpeed - The speed of the animation
- * @param {boolean} autoplay - Whether to autoplay the animation
- * @param {boolean} pixelart - Whether to use pixel art
- * @param {boolean} useLighting - Whether to use lighting
+ * @param {DrawableOptions} [options] - Configuration for the drawable
  */
 class Drawable {
-  constructor(
-    gl,
-    programInfo,
-    verticesBuffer,
-    texCoordBuffer,
-    vertices,
-    useTexture,
-    texturePath,
+  constructor({
+    gl = null,
+    programInfo = null,
+    verticesBuffer = null,
+    texCoordBuffer = null,
+    vertices = null,
+    useTexture = false,
+    texturePath = "",
     frameWidth = 0,
     frameHeight = 0,
     framesPerRow = 1,
@@ -46,8 +51,8 @@ class Drawable {
     animationSpeed = 1000,
     autoplay = true,
     pixelart = false,
-    useLighting = true
-  ) {
+    useLighting = true,
+  } = {}) {
     this.gl = gl;
     this.programInfo = programInfo;
     this.id = IDManager.generateUniqueID();
@@ -444,7 +449,7 @@ class Drawable {
   /**
    * @method getAnimation
    * @description Gets the animation
-   * @returns {Array} - The animation
+   * @returns {Array|string|null} - The animation
    */
   getAnimation() {
     if (this.animationType === "texturePath") {
@@ -609,7 +614,7 @@ class Drawable {
    * @param {Object} objectTransform - The object transform
    */
   draw(globalViewMatrix, uniformLocation, currentTime, objectTransform) {
-    let objectTransformMatrix = this._objectTransformMatrix;
+    const objectTransformMatrix = this._objectTransformMatrix;
     mat4.identity(objectTransformMatrix);
 
     const pos = this._scratchPos;
@@ -643,7 +648,7 @@ class Drawable {
       mat4.translate(objectTransformMatrix, objectTransformMatrix, piv);
     }
 
-    let finalTransformMatrix = this._finalTransformMatrix;
+    const finalTransformMatrix = this._finalTransformMatrix;
     mat4.mul(finalTransformMatrix, globalViewMatrix, objectTransformMatrix);
 
     const usingMaterial = !!this.material;
@@ -845,26 +850,6 @@ class Drawable {
         this.gl.useProgram(standard.program);
       }
     }
-  }
-
-  /**
-   * @method loadImage
-   * @description Loads an image
-   * @param {string} path - The path to the image
-   * @returns {Promise} - The promise
-   */
-  loadImage(path) {
-    return new Promise(function (resolve, reject) {
-      var image = new Image();
-      image.crossOrigin = "Anonymous";
-      image.addEventListener("load", function () {
-        resolve(image);
-      });
-      image.addEventListener("error", function (err) {
-        reject(err);
-      });
-      image.src = path;
-    });
   }
 }
 

@@ -181,7 +181,7 @@ class GameObject {
    * @param {Vector2} position - The position to check
    */
   getRigidBodyAtPosition(position) {
-    for (let component of this.components) {
+    for (const component of this.components) {
       if (component instanceof RigidBody) {
         if (
           component.getPosition().x === position.x &&

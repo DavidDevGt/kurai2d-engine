@@ -47,7 +47,6 @@ declare class CanvasText extends Drawable {
     private _canvas;
     /** @private */
     private _ctx;
-    useTexture: boolean;
     width: number;
     height: number;
     /**

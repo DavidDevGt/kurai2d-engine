@@ -11,9 +11,16 @@ import InstancedTexture from "../InstancedTexture.js";
  * @param {HTMLCanvasElement} canvas - The canvas element
  * @param {Scene} scene - The scene
  * @param {Camera} camera - The camera
+ * @param {Object} [options] - Optional configuration
+ * @param {import("../Kurai2D.js").default} [options.engine] - The engine
+ *   instance. When provided, `screenToWorld` delegates to
+ *   `engine.screenToWorld` which correctly handles design resolution, DPR
+ *   and camera rotation. Without it, a simpler fallback that ignores
+ *   design resolution is used.
  */
 class EventManager {
-  constructor(canvas, scene, camera) {
+  constructor(canvas, scene, camera, options = {}) {
+    this.engine = options.engine || null;
     this.scene = scene;
     this.camera = camera;
     this.canvas = canvas;
@@ -175,13 +182,22 @@ class EventManager {
 
   /**
    * @method screenToWorld
-   * @description Converts screen (client) coordinates to world coordinates,
-   * accounting for camera position, zoom, and CSS/backing pixel ratio.
+   * @description Converts screen (client) coordinates to world coordinates.
+   * When an engine reference is available (passed via the constructor
+   * `options.engine`), delegates to `engine.screenToWorld` which correctly
+   * handles design resolution, device-pixel ratio, and camera rotation.
+   * Falls back to a simpler projection when no engine is set.
    * @param {number} clientX - The clientX of the pointer
    * @param {number} clientY - The clientY of the pointer
    * @returns {{x: number, y: number}} - The world-space coordinates
    */
   screenToWorld(clientX, clientY) {
+    if (this.engine) {
+      const v = this.engine.screenToWorld(clientX, clientY, this.camera);
+      return { x: v.x, y: v.y };
+    }
+
+    // Legacy fallback: no design-resolution, no DPR, no rotation support.
     const rect = this.canvas.getBoundingClientRect();
     const scale = this.camera.transform.scale;
     const zoom = scale && scale.x ? scale.x : 1;

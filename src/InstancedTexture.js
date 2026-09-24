@@ -41,7 +41,7 @@ import {
  */
 class InstancedTexture extends Drawable {
   constructor(
-    texturePath = {},
+    texturePath = "",
     instanceCount = 1,
     frameWidth = 0,
     frameHeight = 0,
@@ -60,23 +60,23 @@ class InstancedTexture extends Drawable {
       textureCoordinates
     );
 
-    super(
-      GLManager.getGL(),
-      GLManager.getProgramInfo(),
+    super({
+      gl: GLManager.getGL(),
+      programInfo: GLManager.getProgramInfo(),
       verticesBuffer,
       texCoordBuffer,
       vertices,
-      true,
+      useTexture: true,
       texturePath,
       frameWidth,
       frameHeight,
       framesPerRow,
       totalFrames,
       animationSpeed,
-      autoPlay,
+      autoplay: autoPlay,
       pixelart,
-      useLighting
-    );
+      useLighting,
+    });
 
     this.instanceCount = instanceCount;
 

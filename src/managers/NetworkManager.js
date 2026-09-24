@@ -46,7 +46,7 @@ class NetworkManager {
     let colyseus;
     try {
       colyseus = await import("colyseus.js");
-    } catch (err) {
+    } catch {
       throw new Error(
         "[NetworkManager] colyseus.js is not installed. Run `npm install colyseus.js` to use networking."
       );

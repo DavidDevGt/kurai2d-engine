@@ -15,7 +15,7 @@ export default InstancedTexture;
  * @param {boolean} useLighting - Whether to use lighting
  */
 declare class InstancedTexture extends Drawable {
-    constructor(texturePath?: {}, instanceCount?: number, frameWidth?: number, frameHeight?: number, framesPerRow?: number, totalFrames?: number, animationSpeed?: number, autoPlay?: boolean, pixelart?: boolean, useLighting?: boolean);
+    constructor(texturePath?: string, instanceCount?: number, frameWidth?: number, frameHeight?: number, framesPerRow?: number, totalFrames?: number, animationSpeed?: number, autoPlay?: boolean, pixelart?: boolean, useLighting?: boolean);
     instanceCount: number;
     instances: any[];
     instanceClickListeners: Map<any, any>;
@@ -311,6 +311,13 @@ declare class InstancedTexture extends Drawable {
      *   instance back to the frame it had before playAnimation was called
      */
     stopAnimation(revertToOriginal?: boolean): void;
+    /**
+     * @method getAnimation
+     * @description Returns the frames of the shared animation set by
+     * playAnimation/playAnimationOnce, or an empty array if none is playing.
+     * @returns {Array} - The animation frames
+     */
+    getAnimation(): any[];
 }
 import Drawable from "./Drawable.js";
 import Instance from "./Instance.js";

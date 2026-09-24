@@ -198,7 +198,7 @@ class AudioManager {
             console.warn(`Spatial audio play interrupted for ${name}:`, error)
           );
         return true;
-      } catch (err) {}
+      } catch {}
     }
 
     node.volume = finalVolume;
@@ -220,7 +220,7 @@ class AudioManager {
     if (!Ctx) return null;
     try {
       this._audioCtx = new Ctx();
-    } catch (err) {
+    } catch {
       this._audioCtx = null;
     }
     return this._audioCtx;

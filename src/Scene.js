@@ -39,11 +39,7 @@ class Scene {
       throw new Error("Object is not a GameObject");
     }
     object.setIsActive(false);
-    this.objects = this.objects.filter(function (obj) {
-      var objId = obj ? obj.id : undefined;
-      var targetId = object ? object.id : undefined;
-      return objId !== targetId;
-    });
+    this.objects = this.objects.filter((obj) => obj?.id !== object?.id);
     if (options.dispose) object.destroy();
   }
 
@@ -81,7 +77,7 @@ class Scene {
    * @param {boolean} bool - The active state
    */
   setIsActive(bool) {
-    for (let object of this.objects) {
+    for (const object of this.objects) {
       this.setActiveRecursive(object, bool);
     }
   }
