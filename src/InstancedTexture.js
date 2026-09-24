@@ -8,8 +8,22 @@ import IDManager from "./managers/IDManager.js";
 import RenderStats from "./managers/RenderStats.js";
 import RigidBody from "./components/RigidBody.js";
 import Collider from "./components/Collider.js";
+import {
+  MATRIX_FLOATS,
+  TEXCOORD_FLOATS,
+  COLOR_FLOATS,
+  writeInstanceMatrix,
+  writeInstanceColor,
+  writeInstanceTexCoords,
+  frameTexCoords,
+} from "./instancing/InstanceData.js";
+import {
+  uploadInstanceBuffer,
+  bindInstanceAttributes,
+  unbindInstanceAttributes,
+} from "./instancing/InstanceAttributes.js";
 
-const Z_AXIS = [0, 0, 1];
+/** @import { Vector3 } from "./Physics.js" */
 
 /**
  * @class InstancedTexture
@@ -67,27 +81,7 @@ class InstancedTexture extends Drawable {
     this.instanceCount = instanceCount;
 
     this.instances = [];
-    this.instanceMatrices = new Float32Array(instanceCount * 16);
-    this.instanceTexCoords = new Float32Array(instanceCount * 8);
-    this.instanceColors = new Float32Array(instanceCount * 4).fill(1);
-
-    this.instanceMatrixBuffer = initInstancedBuffer(
-      GLManager.getGL(),
-      this.instanceMatrices,
-      16
-    );
-
-    this.instanceTexCoordBuffer = initInstancedBuffer(
-      GLManager.getGL(),
-      this.instanceTexCoords,
-      8
-    );
-
-    this.instanceColorBuffer = initInstancedBuffer(
-      GLManager.getGL(),
-      this.instanceColors,
-      4
-    );
+    this._allocateInstanceData(instanceCount);
 
     this.instanceClickListeners = new Map();
     this.instanceHoverListeners = new Map();
@@ -96,11 +90,11 @@ class InstancedTexture extends Drawable {
     /** @private */
     this._matricesDirty = true;
     /** @private */
-    this._scratchMatrix = mat4.create();
-    /** @private */
-    this._scratchPos = vec3.create();
-    /** @private */
-    this._scratchScale = vec3.create();
+    this._scratch = {
+      matrix: mat4.create(),
+      pos: vec3.create(),
+      scale: vec3.create(),
+    };
     /** The animation every instance starts with; set by playAnimation/playAnimationOnce. @private */
     this._defaultAnimation = null;
   }
@@ -185,56 +179,105 @@ class InstancedTexture extends Drawable {
     this.instanceClickListeners.clear();
     this.instanceHoverListeners.clear();
 
-    this.instanceMatrices = new Float32Array(this.instanceCount * 16);
-    this.instanceTexCoords = new Float32Array(this.instanceCount * 8);
-    this.instanceColors = new Float32Array(this.instanceCount * 4).fill(1);
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceMatrixBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      this.instanceMatrices,
-      this.gl.DYNAMIC_DRAW
-    );
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceTexCoordBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      this.instanceTexCoords,
-      this.gl.DYNAMIC_DRAW
-    );
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceColorBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      this.instanceColors,
-      this.gl.DYNAMIC_DRAW
-    );
+    this.instanceMatrices.fill(0);
+    this.instanceTexCoords.fill(0);
+    this.instanceColors.fill(1);
+    this._uploadAll();
+    this._matricesDirty = true;
   }
 
   /**
    * @method updateInstanceCount
-   * @description Updates the instance count of the instanced texture
+   * @description Changes the maximum number of instances, reallocating the
+   * per-instance buffers. Existing instances are kept; any beyond the new
+   * capacity are removed.
    * @param {number} newCount - The new instance count
    */
   updateInstanceCount(newCount) {
-    this.instanceCount = newCount;
-    this.instanceMatrices = new Float32Array(newCount * 16);
-    this.instanceTexCoords = new Float32Array(newCount * 8);
-    this.instanceColors = new Float32Array(newCount * 4).fill(1);
+    while (this.instances.length > newCount) {
+      this.removeInstance(this.instances[this.instances.length - 1].id);
+    }
+    this._deleteInstanceBuffers();
+    this._allocateInstanceData(newCount);
+    this._matricesDirty = true;
+  }
+
+  /**
+   * @method _allocateInstanceData
+   * @description Allocates the CPU-side per-instance arrays and their GPU
+   * buffers for `count` instances.
+   * @private
+   */
+  _allocateInstanceData(count) {
+    this.instanceCount = count;
+    this.instanceMatrices = new Float32Array(count * MATRIX_FLOATS);
+    this.instanceTexCoords = new Float32Array(count * TEXCOORD_FLOATS);
+    this.instanceColors = new Float32Array(count * COLOR_FLOATS).fill(1);
+    this._createInstanceBuffers();
+  }
+
+  /**
+   * @method _createInstanceBuffers
+   * @description Creates GPU buffers from the current per-instance arrays.
+   * @private
+   */
+  _createInstanceBuffers() {
+    const gl = this.gl;
     this.instanceMatrixBuffer = initInstancedBuffer(
-      this.gl,
+      gl,
       this.instanceMatrices,
-      16
+      MATRIX_FLOATS
     );
     this.instanceTexCoordBuffer = initInstancedBuffer(
-      this.gl,
+      gl,
       this.instanceTexCoords,
-      8
+      TEXCOORD_FLOATS
     );
     this.instanceColorBuffer = initInstancedBuffer(
-      this.gl,
+      gl,
       this.instanceColors,
-      4
+      COLOR_FLOATS
+    );
+  }
+
+  /**
+   * @method _deleteInstanceBuffers
+   * @description Frees the per-instance GPU buffers.
+   * @private
+   */
+  _deleteInstanceBuffers() {
+    const gl = this.gl;
+    if (gl) {
+      if (this.instanceMatrixBuffer) gl.deleteBuffer(this.instanceMatrixBuffer);
+      if (this.instanceTexCoordBuffer)
+        gl.deleteBuffer(this.instanceTexCoordBuffer);
+      if (this.instanceColorBuffer) gl.deleteBuffer(this.instanceColorBuffer);
+    }
+    this.instanceMatrixBuffer = null;
+    this.instanceTexCoordBuffer = null;
+    this.instanceColorBuffer = null;
+  }
+
+  /**
+   * @method _uploadAll
+   * @description Uploads all three per-instance arrays to their buffers.
+   * @private
+   */
+  _uploadAll() {
+    uploadInstanceBuffer(
+      this.gl,
+      this.instanceMatrixBuffer,
+      this.instanceMatrices
+    );
+    uploadInstanceBuffer(
+      this.gl,
+      this.instanceTexCoordBuffer,
+      this.instanceTexCoords
+    );
+    uploadInstanceBuffer(
+      this.gl,
+      this.instanceColorBuffer,
+      this.instanceColors
     );
   }
 
@@ -245,32 +288,13 @@ class InstancedTexture extends Drawable {
    */
   updateInstanceMatrix(index) {
     if (index >= 0 && index < this.instanceCount) {
-      const instanceTransform = this.instances[index].transform;
-      const matrix = this._scratchMatrix;
-      mat4.identity(matrix);
-
-      const pos = this._scratchPos;
-      pos[0] = this.pixelart
-        ? Math.round(instanceTransform.position.x)
-        : instanceTransform.position.x;
-      pos[1] = this.pixelart
-        ? Math.round(instanceTransform.position.y)
-        : instanceTransform.position.y;
-      pos[2] = instanceTransform.position.z;
-
-      const scale = this._scratchScale;
-      scale[0] = instanceTransform.scale.x;
-      scale[1] = instanceTransform.scale.y;
-      scale[2] = 1;
-
-      mat4.translate(matrix, matrix, pos);
-      mat4.rotate(matrix, matrix, instanceTransform.rotation, Z_AXIS);
-      mat4.scale(matrix, matrix, scale);
-
-      const offset = index * 16;
-      for (let i = 0; i < 16; i++) {
-        this.instanceMatrices[offset + i] = matrix[i];
-      }
+      writeInstanceMatrix(
+        this.instanceMatrices,
+        index,
+        this.instances[index].transform,
+        this.pixelart,
+        this._scratch
+      );
     }
   }
 
@@ -283,11 +307,10 @@ class InstancedTexture extends Drawable {
       this.updateInstanceMatrix(i);
     }
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceMatrixBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      this.instanceMatrices,
-      this.gl.DYNAMIC_DRAW
+    uploadInstanceBuffer(
+      this.gl,
+      this.instanceMatrixBuffer,
+      this.instanceMatrices
     );
 
     this.updateAllInstanceTexCoords();
@@ -302,19 +325,7 @@ class InstancedTexture extends Drawable {
    */
   updateInstanceColor(index) {
     if (index < 0 || index >= this.instances.length) return;
-    const tint = this.instances[index]._tint;
-    const offset = index * 4;
-    if (tint) {
-      this.instanceColors[offset] = tint[0];
-      this.instanceColors[offset + 1] = tint[1];
-      this.instanceColors[offset + 2] = tint[2];
-      this.instanceColors[offset + 3] = tint[3];
-    } else {
-      this.instanceColors[offset] = 1;
-      this.instanceColors[offset + 1] = 1;
-      this.instanceColors[offset + 2] = 1;
-      this.instanceColors[offset + 3] = 1;
-    }
+    writeInstanceColor(this.instanceColors, index, this.instances[index]._tint);
   }
 
   /**
@@ -325,11 +336,10 @@ class InstancedTexture extends Drawable {
     for (let i = 0; i < this.instances.length; i++) {
       this.updateInstanceColor(i);
     }
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceColorBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      this.instanceColors,
-      this.gl.DYNAMIC_DRAW
+    uploadInstanceBuffer(
+      this.gl,
+      this.instanceColorBuffer,
+      this.instanceColors
     );
   }
 
@@ -348,10 +358,7 @@ class InstancedTexture extends Drawable {
       const texCoords =
         instance._regionUV || this.getFrameTexCoords(instance.frame);
 
-      const offset = index * 8;
-      for (let i = 0; i < 8; i++) {
-        this.instanceTexCoords[offset + i] = texCoords[i];
-      }
+      writeInstanceTexCoords(this.instanceTexCoords, index, texCoords);
     }
   }
 
@@ -364,11 +371,10 @@ class InstancedTexture extends Drawable {
       this.updateInstanceTexCoords(i);
     }
 
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceTexCoordBuffer);
-    this.gl.bufferData(
-      this.gl.ARRAY_BUFFER,
-      this.instanceTexCoords,
-      this.gl.DYNAMIC_DRAW
+    uploadInstanceBuffer(
+      this.gl,
+      this.instanceTexCoordBuffer,
+      this.instanceTexCoords
     );
   }
 
@@ -486,75 +492,21 @@ class InstancedTexture extends Drawable {
    * @returns {Array} - The texture coordinates
    */
   getFrameTexCoords(frame) {
-    let texLeft, texRight, texTop, texBottom;
-
-    if (this.frameWidth > 0 && this.frameHeight > 0) {
-      const col = frame % this.framesPerRow;
-      const row = Math.floor(frame / this.framesPerRow);
-
-      const ix = 0.5 / this.textureWidth;
-      const iy = 0.5 / this.textureHeight;
-
-      texLeft = ((col + 1) * this.frameWidth) / this.textureWidth - ix;
-      texRight = (col * this.frameWidth) / this.textureWidth + ix;
-      texTop =
-        (this.textureHeight - row * this.frameHeight - this.frameHeight) /
-          this.textureHeight +
-        iy;
-      texBottom =
-        (this.textureHeight - row * this.frameHeight) / this.textureHeight - iy;
-    } else {
-      texLeft = 1.0;
-      texRight = 0.0;
-      texTop = 0.0;
-      texBottom = 1.0;
-    }
-
-    return this.mirrored
-      ? [
-          texRight,
-          texBottom,
-          texLeft,
-          texBottom,
-          texRight,
-          texTop,
-          texLeft,
-          texTop,
-        ]
-      : [
-          texLeft,
-          texBottom,
-          texRight,
-          texBottom,
-          texLeft,
-          texTop,
-          texRight,
-          texTop,
-        ];
+    return frameTexCoords(frame, this, this.mirrored);
   }
 
   /**
    * @method _restoreGL
    * @description Rebuilds the per-instance buffers from their CPU-side arrays
    * after a WebGL context loss, on top of the base Drawable restore.
-   * @private
+   * @internal
    */
   _restoreGL() {
     if (this._disposed) return;
     super._restoreGL();
     const gl = this.gl;
     if (!gl) return;
-    this.instanceMatrixBuffer = initInstancedBuffer(
-      gl,
-      this.instanceMatrices,
-      16
-    );
-    this.instanceTexCoordBuffer = initInstancedBuffer(
-      gl,
-      this.instanceTexCoords,
-      8
-    );
-    this.instanceColorBuffer = initInstancedBuffer(gl, this.instanceColors, 4);
+    this._createInstanceBuffers();
     this._matricesDirty = true;
   }
 
@@ -565,16 +517,7 @@ class InstancedTexture extends Drawable {
    */
   dispose() {
     if (this._disposed) return;
-    const gl = this.gl;
-    if (gl) {
-      if (this.instanceMatrixBuffer) gl.deleteBuffer(this.instanceMatrixBuffer);
-      if (this.instanceTexCoordBuffer)
-        gl.deleteBuffer(this.instanceTexCoordBuffer);
-      if (this.instanceColorBuffer) gl.deleteBuffer(this.instanceColorBuffer);
-    }
-    this.instanceMatrixBuffer = null;
-    this.instanceTexCoordBuffer = null;
-    this.instanceColorBuffer = null;
+    this._deleteInstanceBuffers();
     this.instances = [];
     super.dispose();
   }
@@ -678,57 +621,14 @@ class InstancedTexture extends Drawable {
         this.gl.bindTexture(this.gl.TEXTURE_2D, this.texture);
         RenderStats.textureBinds++;
       }
-
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceTexCoordBuffer);
-
-      const texCoordAttribs = [
-        this.programInfo.attribLocations.instanceTexCoord0,
-        this.programInfo.attribLocations.instanceTexCoord1,
-        this.programInfo.attribLocations.instanceTexCoord2,
-        this.programInfo.attribLocations.instanceTexCoord3,
-      ];
-
-      for (let i = 0; i < 4; i++) {
-        const loc = texCoordAttribs[i];
-        if (loc !== -1) {
-          this.gl.enableVertexAttribArray(loc);
-          this.gl.vertexAttribPointer(
-            loc,
-            2,
-            this.gl.FLOAT,
-            false,
-            8 * 4,
-            i * 2 * 4
-          );
-          this.gl.vertexAttribDivisor(loc, 1);
-        }
-      }
     }
 
-    const colorLoc = this.programInfo.attribLocations.instanceColor;
-    if (colorLoc !== undefined && colorLoc !== -1) {
-      this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceColorBuffer);
-      this.gl.enableVertexAttribArray(colorLoc);
-      this.gl.vertexAttribPointer(colorLoc, 4, this.gl.FLOAT, false, 0, 0);
-      this.gl.vertexAttribDivisor(colorLoc, 1);
-    }
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.instanceMatrixBuffer);
-
-    const matrixLoc = this.programInfo.attribLocations.instanceMatrix;
-    for (let i = 0; i < 4; i++) {
-      const loc = matrixLoc + i;
-      this.gl.enableVertexAttribArray(loc);
-      this.gl.vertexAttribPointer(
-        loc,
-        4,
-        this.gl.FLOAT,
-        false,
-        16 * 4,
-        i * 4 * 4
-      );
-      this.gl.vertexAttribDivisor(loc, 1);
-    }
+    const buffers = {
+      matrix: this.instanceMatrixBuffer,
+      texCoord: this.instanceTexCoordBuffer,
+      color: this.instanceColorBuffer,
+    };
+    bindInstanceAttributes(this.gl, this.programInfo, buffers, this.useTexture);
 
     const drawMode =
       this.vertices.length === 8 ? this.gl.TRIANGLE_STRIP : this.gl.TRIANGLES;
@@ -743,32 +643,7 @@ class InstancedTexture extends Drawable {
     RenderStats.drawCalls++;
     RenderStats.quads += this.instances.length;
 
-    for (let i = 0; i < 4; i++) {
-      this.gl.vertexAttribDivisor(matrixLoc + i, 0);
-      this.gl.disableVertexAttribArray(matrixLoc + i);
-    }
-
-    if (colorLoc !== undefined && colorLoc !== -1) {
-      this.gl.vertexAttribDivisor(colorLoc, 0);
-      this.gl.disableVertexAttribArray(colorLoc);
-    }
-
-    if (this.useTexture) {
-      const texCoordAttribs = [
-        this.programInfo.attribLocations.instanceTexCoord0,
-        this.programInfo.attribLocations.instanceTexCoord1,
-        this.programInfo.attribLocations.instanceTexCoord2,
-        this.programInfo.attribLocations.instanceTexCoord3,
-      ];
-
-      for (let i = 0; i < 4; i++) {
-        const loc = texCoordAttribs[i];
-        if (loc !== -1) {
-          this.gl.vertexAttribDivisor(loc, 0);
-          this.gl.disableVertexAttribArray(loc);
-        }
-      }
-    }
+    unbindInstanceAttributes(this.gl, this.programInfo, this.useTexture);
 
     GLState.uniform1i(
       this.gl,
@@ -1002,9 +877,14 @@ class InstancedTexture extends Drawable {
    * instance, then holds each on its last frame: the current instances
    * immediately, and any added later via {@link InstancedTexture#addInstance}.
    * @param {Array} frames - The frames to play
-   * @param {number} [speed=1000] - Milliseconds per frame
+   * @param {number|Array} [speed=1000] - Milliseconds per frame. An array is
+   *   accepted for compatibility with Drawable#playAnimationOnce(animation,
+   *   defaultAnimation, speed): it is ignored (instances hold their last
+   *   frame) and the speed is read from the third argument.
+   * @param {number} [drawableSpeed=1000] - Speed when called Drawable-style
    */
-  playAnimationOnce(frames, speed = 1000) {
+  playAnimationOnce(frames, speed = 1000, drawableSpeed = 1000) {
+    if (Array.isArray(speed)) speed = drawableSpeed;
     if (!frames || frames.length === 0) {
       console.error(
         "[InstancedTexture] playAnimationOnce: frames cannot be empty!"

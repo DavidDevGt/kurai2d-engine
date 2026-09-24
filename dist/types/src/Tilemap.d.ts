@@ -1,4 +1,5 @@
 export default Tilemap;
+/** @import { Physics } from "./Physics.js" */
 /**
  * @class Tilemap
  * @description Builds a grid of tiles from a 2D array of frame indices, rendered
@@ -89,3 +90,4 @@ declare class Tilemap {
 }
 import GameObject from "./components/GameObject.js";
 import InstancedTexture from "./InstancedTexture.js";
+import type { Physics } from "./Physics.js";

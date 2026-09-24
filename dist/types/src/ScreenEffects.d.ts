@@ -1,4 +1,5 @@
 export default ScreenEffects;
+/** @import Scene from "./Scene.js" */
 /**
  * @class ScreenEffects
  * @description In-engine full-screen camera/transition effects: fade to/from a
@@ -108,4 +109,5 @@ declare class ScreenEffects {
      */
     destroy(): void;
 }
+import type Scene from "./Scene.js";
 import Color from "./Color.js";

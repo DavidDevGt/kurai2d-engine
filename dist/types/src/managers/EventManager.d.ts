@@ -1,4 +1,7 @@
 export default EventManager;
+/** @import Camera from "../Camera.js" */
+/** @import GameObject from "../components/GameObject.js" */
+/** @import Instance from "../Instance.js" */
 /**
  * @class EventManager
  * @description Manages the events for the game
@@ -198,4 +201,6 @@ declare class EventManager {
      */
     clean(): void;
 }
+import type GameObject from "../components/GameObject.js";
+import type Instance from "../Instance.js";
 import Scene from "../Scene.js";

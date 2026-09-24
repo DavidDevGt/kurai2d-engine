@@ -1,4 +1,5 @@
 export default Transform;
+/** @import { Vector2, Vector3 } from "./Physics.js" */
 /**
  * @class Transform
  * @description Represents a transform with optional parent/child hierarchy.
@@ -92,3 +93,5 @@ declare class Transform {
      */
     getScale(): Vector2;
 }
+import type { Vector3 } from "./Physics.js";
+import type { Vector2 } from "./Physics.js";

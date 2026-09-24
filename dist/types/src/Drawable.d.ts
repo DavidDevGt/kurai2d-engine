@@ -32,8 +32,6 @@ declare class Drawable {
     useTexture: any;
     pixelart: boolean;
     /** @private */
-    private _disposed;
-    /** @private */
     private _texRetained;
     frameWidth: number;
     frameHeight: number;
@@ -53,8 +51,6 @@ declare class Drawable {
     private _pivotX;
     /** @private */
     private _pivotY;
-    /** @private */
-    private _hasPivot;
     animationType: string;
     currentAnimationArray: any[];
     currentAnimationIndex: number;
@@ -63,7 +59,8 @@ declare class Drawable {
     parentObject: any;
     isActive: boolean;
     isWireframe: boolean;
-    callbackFunction: () => void;
+    /** @type {Function} */
+    callbackFunction: Function;
     useLighting: boolean;
     /** @private */
     private _objectTransformMatrix;
@@ -82,24 +79,13 @@ declare class Drawable {
     /** @private */
     private _lastFlippedY;
     /** @private */
-    private _lastTextureWidth;
-    /** @private */
     private _wireframeBuffer;
     blendMode: string;
     /** @private */
     private _region;
     /** @private */
     private _lastRegion;
-    material: any;
-    /**
-     * @method _restoreGL
-     * @description Rebuilds this drawable's GPU resources after a WebGL
-     * context loss: vertex/texcoord buffers from their kept CPU copies, and a
-     * fresh texture pointer from the (re-uploaded) TextureManager cache.
-     * Called by GLManager.restoreAll(); not meant for manual use.
-     * @private
-     */
-    private _restoreGL;
+    material: Material;
     /**
      * @method setMaterial
      * @description Assigns a custom Material (fragment shader) to this drawable,
@@ -162,10 +148,6 @@ declare class Drawable {
      * @param {number} [ay=0.5]
      */
     setAnchor(ax?: number, ay?: number): void;
-    /** @private */
-    private _applyBlend;
-    /** @private */
-    private _restoreBlend;
     /**
      * @method setIsWireframe
      * @description Sets the wireframe mode
@@ -296,5 +278,6 @@ declare class Drawable {
     loadImage(path: string): Promise<any>;
 }
 import { vec4 } from "gl-matrix";
+import type Material from "./Material.js";
 import Color from "./Color.js";
 import { mat4 } from "gl-matrix";

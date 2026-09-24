@@ -1,6 +1,6 @@
 /**
  * @class Physics
- * @description The game-facing front end of Emerald's own rigid-body engine
+ * @description The game-facing front end of Kurai2D's own rigid-body engine
  * (see `src/physics`). It owns the {@link World}, converts between world
  * (pixel) units and physics units via `scale`, steps the simulation on a fixed
  * timestep, and routes contacts to `onCollisionEnter`/`onCollisionExit` on your
@@ -335,3 +335,8 @@ export class Vector3 {
     getZ(): number;
 }
 import { World } from "./physics/index.js";
+import type { Body } from "./physics/Body.js";
+import type RigidBody from "./components/RigidBody.js";
+import type DistanceJoint from "./physics/DistanceJoint.js";
+import type RevoluteJoint from "./physics/RevoluteJoint.js";
+import type { Joint } from "./physics/Joint.js";

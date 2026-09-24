@@ -1,4 +1,5 @@
 export default Aseprite;
+/** @import Animator from "../Animator.js" */
 /**
  * @class Aseprite
  * @description Imports sprite-sheet metadata exported from Aseprite
@@ -77,3 +78,4 @@ declare class Aseprite {
      */
     static applyTo(animator: Animator, sheet: any, options?: any): Animator;
 }
+import type Animator from "../Animator.js";

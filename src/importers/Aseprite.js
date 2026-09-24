@@ -1,3 +1,5 @@
+/** @import Animator from "../Animator.js" */
+
 /**
  * @class Aseprite
  * @description Imports sprite-sheet metadata exported from Aseprite

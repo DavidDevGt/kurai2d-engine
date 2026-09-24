@@ -16,6 +16,8 @@ declare class GameObject {
     opacity: number;
     layer: number;
     screenSpace: boolean;
+    /** Never culled by the camera, even when outside the view (HUD, UI). */
+    alwaysVisible: boolean;
     /**
      * @method setLayer
      * @description Sets the render layer. Objects are drawn by layer first, then
@@ -36,15 +38,15 @@ declare class GameObject {
     /**
      * @method addComponent
      * @description Adds a component to the game object
-     * @param {Component} componentInstance - The component to add
+     * @param {Object} componentInstance - The component to add
      */
-    addComponent(componentInstance: Component): void;
+    addComponent(componentInstance: any): void;
     /**
      * @method removeComponent
      * @description Removes a component from the game object
-     * @param {Component} component - The component to remove
+     * @param {Object} component - The component to remove
      */
-    removeComponent(component: Component): void;
+    removeComponent(component: any): void;
     /**
      * @method update
      * @description Ticks the lifecycle of Behaviour components on this object.
@@ -90,9 +92,9 @@ declare class GameObject {
     /**
      * @method getComponent
      * @description Returns a component from the game object
-     * @param {Component} componentType - The type of component to return
+     * @param {Object} componentType - The type of component to return
      */
-    getComponent(componentType: Component): any;
+    getComponent(componentType: any): any;
     /**
      * @method getRigidBodyAtPosition
      * @description Returns the rigidbody at a position
@@ -123,11 +125,11 @@ declare class GameObject {
     /**
      * @method draw
      * @description Draws the game object
-     * @param {Matrix4} globalViewMatrix - The global view matrix
+     * @param {import("gl-matrix").mat4} globalViewMatrix - The global view matrix
      * @param {WebGLUniformLocation} uniformLocation - The uniform location
      * @param {number} currentTime - The current time
      */
-    draw(globalViewMatrix: Matrix4, uniformLocation: WebGLUniformLocation, currentTime: number): void;
+    draw(globalViewMatrix: import("gl-matrix").mat4, uniformLocation: WebGLUniformLocation, currentTime: number): void;
 }
 import Transform from "../Transform.js";
 import { Vector2 } from "../Physics.js";

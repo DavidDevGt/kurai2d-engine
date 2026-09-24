@@ -1,5 +1,5 @@
 /**
- * @enum BodyType
+ * @enum {string} BodyType
  * @description The three ways a body can take part in the simulation.
  *
  * - `static`: never moves, infinite mass. Ground, walls, platforms.

@@ -1,3 +1,5 @@
+import GLManager from "./GLManager.js";
+
 /**
  * @class GLState
  * @description Tiny redundant-uniform filter. The renderer sets the same handful
@@ -5,6 +7,7 @@
  * for every object every frame; most calls repeat the previous value. These
  * helpers skip the GL call when the value is unchanged. Keyed by uniform
  * location, which is program-specific, so the cache is safe across objects.
+ * The caches live in the current RenderContext, one set per engine.
  */
 class GLState {
   /**
@@ -61,10 +64,21 @@ class GLState {
       GLState.vec4s.set(location, [value[0], value[1], value[2], value[3]]);
     }
   }
-}
 
-GLState.ints = new Map();
-GLState.floats = new Map();
-GLState.vec4s = new Map();
+  /** @returns {Map<WebGLUniformLocation, number>} */
+  static get ints() {
+    return GLManager.getContext().uniformInts;
+  }
+
+  /** @returns {Map<WebGLUniformLocation, number>} */
+  static get floats() {
+    return GLManager.getContext().uniformFloats;
+  }
+
+  /** @returns {Map<WebGLUniformLocation, number[]>} */
+  static get vec4s() {
+    return GLManager.getContext().uniformVec4s;
+  }
+}
 
 export default GLState;

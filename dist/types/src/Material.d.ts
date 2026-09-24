@@ -36,7 +36,7 @@ declare class Material {
      * @param {Object} [options] - { vertex?: string, uniforms?: { name: value|function } }
      */
     constructor(fragmentSource: string, options?: any);
-    gl: WebGLRenderingContext;
+    gl: WebGL2RenderingContext;
     /** @private */
     private _vertexSource;
     /** @private */
@@ -62,13 +62,6 @@ declare class Material {
     /** @private */
     private _locCache;
     /**
-     * @method _restoreGL
-     * @description Recompiles the material's program and refreshes every cached
-     * location after a WebGL context loss.
-     * @private
-     */
-    private _restoreGL;
-    /**
      * @method set
      * @description Sets (or schedules) a custom uniform value. Numbers, arrays
      * (vec2/3/4), and functions returning those are supported. A function uniform
@@ -89,3 +82,4 @@ declare class Material {
      */
     applyCustomUniforms(drawable?: Drawable): void;
 }
+import type Drawable from "./Drawable.js";

@@ -14,9 +14,32 @@ import { Vector2 } from "../Physics.js";
  * @param {number} offset - The offset of the particle
  * @param {number} rotation - The rotation of the particle
  * @param {Vector2} scale - The scale of the particle
- * @param {Array} animation - The animation of the particle
+ * @param {{frames: number[], speed: number}} animation - The animation of the particle
  */
 class ParticleSettings {
+  /**
+   * @param {Object} [settings]
+   * @param {number} [settings.lifetime=1]
+   * @param {Vector2} [settings.velocity]
+   * @param {Vector2} [settings.gravity]
+   * @param {number} [settings.amount=10]
+   * @param {Vector2} [settings.direction]
+   * @param {number} [settings.spread=Math.PI/4]
+   * @param {number} [settings.emissionRate=Infinity]
+   * @param {number} [settings.frame]
+   * @param {number} [settings.offset]
+   * @param {number} [settings.rotation]
+   * @param {Vector2} [settings.scale]
+   * @param {{frames: number[], speed: number}} [settings.animation]
+   * @param {string} [settings.shape="cone"]
+   * @param {number} [settings.shapeRadius=0]
+   * @param {Vector2} [settings.shapeSize]
+   * @param {Array|Function|null} [settings.scaleOverLife]
+   * @param {Array|Function|null} [settings.alphaOverLife]
+   * @param {Array|Function|null} [settings.colorOverLife]
+   * @param {number} [settings.rotationSpeed=0]
+   * @param {number} [settings.drag=0]
+   */
   constructor({
     lifetime = 1.0,
     velocity = new Vector2(0, 0),

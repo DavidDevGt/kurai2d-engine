@@ -1,5 +1,9 @@
 import Instance from "../Instance.js";
 
+/** @import InstancedTexture from "../InstancedTexture.js" */
+/** @import { Vector2, Vector3 } from "../Physics.js" */
+/** @import ParticleSettings from "./ParticleSettings.js" */
+
 /**
  * @class Particle
  * @description Represents a particle in the particle system

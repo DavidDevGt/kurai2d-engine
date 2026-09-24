@@ -1,6 +1,10 @@
 import Scene from "../Scene.js";
 import InstancedTexture from "../InstancedTexture.js";
 
+/** @import Camera from "../Camera.js" */
+/** @import GameObject from "../components/GameObject.js" */
+/** @import Instance from "../Instance.js" */
+
 /**
  * @class EventManager
  * @description Manages the events for the game

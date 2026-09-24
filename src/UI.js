@@ -5,6 +5,8 @@ import Camera from "./Camera.js";
 import Color from "./Color.js";
 import { Vector2, Vector3 } from "./Physics.js";
 
+/** @import Scene from "./Scene.js" */
+
 /**
  * @class UI
  * @description A small retained-mode UI toolkit rendered entirely with the
@@ -20,7 +22,7 @@ import { Vector2, Vector3 } from "./Physics.js";
  * @example
  * const uiCam = UI.createCamera();           // onlyLayers = [UI layer]
  * gameCamera.ignoreLayer(UI.LAYER);
- * emerald.setCameras([gameCamera, uiCam]);
+ * engine.setCameras([gameCamera, uiCam]);
  *
  * const ui = new UI(scene, canvas);
  * ui.label(() => ({ x: 0, y: 200 }), "PAUSED", { font: "700 48px sans-serif" });

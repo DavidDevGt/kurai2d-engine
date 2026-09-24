@@ -1,60 +1,120 @@
+import RenderContext from "./RenderContext.js";
+
+/** @type {WeakMap<object, RenderContext>} */
+const contextsByGL = new WeakMap();
+/** Restorable object -> the context it was registered in. */
+const ownerOf = new WeakMap();
+/** The context engine objects read from and write to. */
+let current = new RenderContext();
+
 /**
  * @class GLManager
- * @description Manages the WebGL context for the game
+ * @description Gives engine objects access to the current WebGL context.
+ * State is stored per RenderContext: each Kurai2D engine owns one and makes
+ * it current while it renders, and objects created afterwards (textures,
+ * shapes, render targets...) bind to the context that was current when they
+ * were created. With a single engine this is invisible.
  */
 class GLManager {
   /**
+   * @method getContext
+   * @description Returns the current RenderContext.
+   * @returns {RenderContext}
+   */
+  static getContext() {
+    return current;
+  }
+
+  /**
+   * @method makeCurrent
+   * @description Makes a RenderContext current. Engines call this for you
+   * (see `Kurai2D#makeCurrent`).
+   * @param {RenderContext} context
+   */
+  static makeCurrent(context) {
+    current = context;
+  }
+
+  /**
+   * @method contextFor
+   * @description Returns the RenderContext registered for a WebGL context,
+   * or null.
+   * @param {object} gl
+   * @returns {RenderContext|null}
+   */
+  static contextFor(gl) {
+    return (gl && contextsByGL.get(gl)) || null;
+  }
+
+  /**
    * @method setGL
-   * @description Sets the WebGL context
-   * @param {WebGLRenderingContext} gl - The WebGL context
+   * @description Makes the RenderContext of `gl` current, creating it on first
+   * use. The first call adopts the initial (empty) context so state set
+   * before any engine existed is kept.
+   * @param {object} gl - The WebGL context
    */
   static setGL(gl) {
-    GLManager.gl = gl;
+    if (!gl) {
+      current.gl = null;
+      return;
+    }
+    let context = contextsByGL.get(gl);
+    if (!context) {
+      if (!current.gl) {
+        current.gl = gl;
+        current.canvas = gl.canvas || current.canvas;
+        context = current;
+      } else {
+        context = new RenderContext(gl);
+      }
+      contextsByGL.set(gl, context);
+    }
+    current = context;
   }
 
   /**
    * @method setProgramInfo
-   * @description Sets the program info
+   * @description Sets the standard program info of the current context.
    * @param {Object} programInfo - The program info
    */
   static setProgramInfo(programInfo) {
-    GLManager.programInfo = programInfo;
+    current.programInfo = programInfo;
   }
 
   /**
    * @method setCanvas
-   * @description Sets the canvas
+   * @description Sets the canvas of the current context.
    * @param {HTMLCanvasElement} canvas - The canvas
    */
   static setCanvas(canvas) {
-    GLManager.canvas = canvas;
+    current.canvas = canvas;
   }
 
   /**
    * @method getGL
-   * @description Returns the WebGL context
-   * @returns {WebGLRenderingContext} - The WebGL context
+   * @description Returns the current WebGL context.
+   * @returns {WebGL2RenderingContext} - The WebGL context
    */
   static getGL() {
-    return GLManager.gl;
+    return current.gl;
   }
 
   /**
    * @method getProgramInfo
-   * @description Returns the program info
+   * @description Returns the standard program info of the current context.
    * @returns {Object} - The program info
    */
   static getProgramInfo() {
-    return GLManager.programInfo;
+    return current.programInfo;
   }
 
   /**
    * @method getCanvas
-   * @description Returns the canvas
+   * @description Returns the canvas of the current context.
    * @returns {HTMLCanvasElement} - The canvas
    */
   static getCanvas() {
-    return GLManager.canvas;
+    return current.canvas;
   }
 
   /**
@@ -62,29 +122,35 @@ class GLManager {
    * @description Registers an object holding GL resources (buffers, textures,
    * programs) for re-creation after a WebGL context loss. The object must
    * implement `_restoreGL()`. Drawables register themselves automatically and
-   * unregister on dispose().
+   * unregister on dispose(). The object belongs to the current context.
    * @param {Object} obj - An object with a _restoreGL() method
    */
   static registerRestorable(obj) {
-    GLManager.restorables.add(obj);
+    const context = current;
+    context.restorables.add(obj);
+    ownerOf.set(obj, context);
   }
 
   /**
    * @method unregisterRestorable
-   * @description Removes an object from the context-restore registry.
+   * @description Removes an object from the context-restore registry of the
+   * context it was registered in.
+   * @param {Object} obj
    */
   static unregisterRestorable(obj) {
-    GLManager.restorables.delete(obj);
+    const context = ownerOf.get(obj) || current;
+    context.restorables.delete(obj);
+    ownerOf.delete(obj);
   }
 
   /**
    * @method restoreAll
-   * @description Calls _restoreGL() on every registered object. Invoked by
-   * Emerald after the context is restored and the default shaders/textures
-   * have been rebuilt.
+   * @description Calls _restoreGL() on every object registered in the current
+   * context. Invoked by Kurai2D after the context is restored and the default
+   * shaders/textures have been rebuilt.
    */
   static restoreAll() {
-    for (const obj of GLManager.restorables) {
+    for (const obj of current.restorables) {
       try {
         obj._restoreGL();
       } catch (e) {
@@ -100,7 +166,7 @@ class GLManager {
    * @param {Float32Array} matrix - The projection matrix
    */
   static setProjection(matrix) {
-    GLManager.projection = matrix;
+    current.projection = matrix;
   }
 
   /**
@@ -109,14 +175,33 @@ class GLManager {
    * @returns {Float32Array}
    */
   static getProjection() {
-    return GLManager.projection;
+    return current.projection;
+  }
+
+  /** @returns {WebGL2RenderingContext|null} */
+  static get gl() {
+    return current.gl;
+  }
+
+  /** @returns {Object|null} */
+  static get programInfo() {
+    return current.programInfo;
+  }
+
+  /** @returns {HTMLCanvasElement|null} */
+  static get canvas() {
+    return current.canvas;
+  }
+
+  /** @returns {Float32Array|null} */
+  static get projection() {
+    return current.projection;
+  }
+
+  /** @returns {Set<Object>} */
+  static get restorables() {
+    return current.restorables;
   }
 }
-
-GLManager.gl = null;
-GLManager.programInfo = null;
-GLManager.canvas = null;
-GLManager.projection = null;
-GLManager.restorables = new Set();
 
 export default GLManager;

@@ -74,10 +74,11 @@ declare class CanvasText extends Drawable {
     setAlign(align: string): void;
     /**
      * @method setColor
-     * @description Sets the text color (CSS color string) and re-renders.
-     * @param {string} cssColor
+     * @description Sets the text color and re-renders. Accepts a CSS color
+     * string or a Color, like every other Drawable.
+     * @param {string|Color} color
      */
-    setColor(cssColor: string): void;
+    setColor(color: string | Color): void;
     /**
      * @method getSize
      * @returns {{width:number, height:number}} - The canvas pixel size
@@ -88,4 +89,5 @@ declare class CanvasText extends Drawable {
     };
 }
 import Drawable from "./Drawable.js";
+import Color from "./Color.js";
 import GameObject from "./components/GameObject.js";

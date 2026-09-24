@@ -1,3 +1,4 @@
+/** @import { Body } from "./Body.js" */
 /**
  * @description Identifies a concrete {@link Joint} subclass.
  */
@@ -28,9 +29,9 @@ class Joint {
     this.userData = def.userData ?? null;
     /** @private */
     this.islandFlag = false;
-    /** @private */
+    /** @internal */
     this.prev = null;
-    /** @private */
+    /** @internal */
     this.next = null;
   }
 

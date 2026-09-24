@@ -9,6 +9,10 @@ import { ShapeType } from "./Shapes.js";
 import { testOverlap } from "./Distance.js";
 import { BodyType } from "./BodyType.js";
 
+/** @import { Fixture, FixtureProxy } from "./Fixture.js" */
+/** @import { Transform2 } from "./Math2D.js" */
+/** @import World from "./World.js" */
+
 /**
  * @function mixFriction
  * @description Combines two friction coefficients (geometric mean), so a slick
@@ -71,7 +75,7 @@ class Contact {
     );
     this.tangentSpeed = 0;
 
-    /** @private */
+    /** @internal */
     this.touching = false;
     /** @private */
     this.enabled = true;
@@ -83,7 +87,7 @@ class Contact {
     this.toiFlag = false;
     /** @private */
     this.toi = 1;
-    /** @private */
+    /** @internal */
     this._index = -1;
   }
 

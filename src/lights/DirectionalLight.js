@@ -1,5 +1,7 @@
 import { Vector2 } from "../Physics.js";
 
+/** @import Color from "../Color.js" */
+
 /**
  * @class DirectionalLight
  * @param {Vector2} position - The position of the light

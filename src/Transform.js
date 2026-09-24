@@ -1,3 +1,5 @@
+/** @import { Vector2, Vector3 } from "./Physics.js" */
+
 /**
  * @class Transform
  * @description Represents a transform with optional parent/child hierarchy.

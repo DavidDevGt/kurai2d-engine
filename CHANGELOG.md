@@ -1,5 +1,38 @@
 # Changelog
 
+## 4.0.0
+
+First release as **Kurai2D Engine**, a fork of Emerald 3.4.1. Entries below 4.0.0 are Emerald's history.
+
+### Breaking
+
+- The package is now `kurai2d-engine`, and the engine class `Emerald` is now `Kurai2D`. `EmeraldDB` is now `KuraiDB`, and its default IndexedDB database is `"kurai2d-db"` instead of `"emerald-db"` (see "Migrating from Emerald" in the README to keep reading old saves).
+- Console messages are prefixed `[Kurai2D] >`.
+- Requires Node 18 or newer for tooling and tests (Node 12–16 are end-of-life).
+
+### Added
+
+- Several engines can share a page. Each `Kurai2D` owns a `RenderContext` (its WebGL state, texture cache, uniform cache, camera and render stats), and makes it current while it draws. New `Kurai2D#makeCurrent()` and `Kurai2D#destroy()`.
+- `new Kurai2D(canvas, { tickGlobals })` (default `true`): set it to `false` on secondary engines so `Time`, `Tween`, `Timer` and `Coroutine` advance once per frame. A warning is logged when a second engine would tick them too.
+- `Kurai2D#isPaused()`.
+- `GameObject#alwaysVisible` is now a declared property (default `false`); the culler already honoured it.
+- A fake-WebGL render test suite covering auto-batching, culling, lights, multiple engines, context restore, viewport math and the game loop.
+- CI on GitHub Actions (Node 18, 20, 22): format check, type check, tests, and a check that `dist/types` is up to date.
+
+### Changed
+
+- The engine core is split into focused modules: `render/StandardProgram`, `render/Viewport`, `render/LightUniforms`, `render/DrawList` and `GameLoop`. `InstancedTexture` moves its per-instance packing and attribute binding to `instancing/InstanceData` and `instancing/InstanceAttributes`. No public API changes.
+- The JavaScript sources are now type-checked from their JSDoc (`checkJs`), and the published types are more precise as a result.
+- `InstancedTexture#updateInstanceCount` frees the old per-instance GPU buffers, keeps existing instances (dropping any beyond the new capacity) and rebuilds their matrices.
+- Unused dev dependencies (`colyseus`, `@colyseus/schema`, `vite`) were removed, which also drops the deprecated `uuid@8` from the install.
+
+### Fixed
+
+- After a WebGL context loss and restore, auto-batched sprites stopped drawing because the internal `SpriteBatch` kept using the dead program and buffers. It is now rebuilt on restore.
+- `CanvasText#setColor` accepts a `Color` like every other drawable; passing one used to produce invalid text color.
+- A shader compile or link failure is logged with `console.error` instead of blocking the page with `alert()`.
+- `InstancedTexture#playAnimationOnce` also accepts the `Drawable` signature `(animation, defaultAnimation, speed)`.
+
 ## 3.4.1
 
 ### Fixed

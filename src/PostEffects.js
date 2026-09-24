@@ -73,7 +73,7 @@ class BloomEffect extends PostEffect {
     );
   }
 
-  /** @private */
+  /** @internal */
   _compile(gl) {
     super._compile(gl);
     this._threshold._compile(gl);
@@ -97,13 +97,13 @@ class BloomEffect extends PostEffect {
 /**
  * @namespace PostEffects
  * @description Factory functions for the built-in post-processing effects. Pass
- * the returned PostEffect to `emerald.addPostEffect(...)`.
+ * the returned PostEffect to `engine.addPostEffect(...)`.
  *
  * @example
- * emerald.enablePostProcessing();
- * emerald.addPostEffect(PostEffects.bloom({ threshold: 0.6, intensity: 1.2 }));
- * emerald.addPostEffect(PostEffects.vignette({ intensity: 0.5 }));
- * emerald.addPostEffect(PostEffects.crt());
+ * engine.enablePostProcessing();
+ * engine.addPostEffect(PostEffects.bloom({ threshold: 0.6, intensity: 1.2 }));
+ * engine.addPostEffect(PostEffects.vignette({ intensity: 0.5 }));
+ * engine.addPostEffect(PostEffects.crt());
  */
 const PostEffects = {
   /**

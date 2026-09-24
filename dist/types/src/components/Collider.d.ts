@@ -1,7 +1,10 @@
 export default Collider;
+/** @import GameObject from "./GameObject.js" */
+/** @import Transform from "../Transform.js" */
+/** @import RigidBody from "./RigidBody.js" */
 /**
  * @class Collider
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {boolean} isSensor - Whether the collider is a sensor
  * @param {GameObject} parentObject - The parent object of the collider
  */
@@ -12,8 +15,16 @@ declare class Collider {
     isSensor: boolean;
     id: string;
     name: string;
-    /** @private */
-    private _debugShape;
+    /**
+     * The physics fixture, created by the concrete collider subclass.
+     * @type {import("../physics/Fixture.js").Fixture|null}
+     */
+    collider: import("../physics/Fixture.js").Fixture | null;
+    /**
+     * @type {{category:number, mask:number, group:number}|null}
+     * @private
+     */
+    private _filter;
     /**
      * @method syncDebugShape
      * @description Mirrors a transform onto the debug shape, but only if one has
@@ -44,8 +55,6 @@ declare class Collider {
         mask?: number;
         group?: number;
     }): Collider;
-    /** @private */
-    private _filter;
     /**
      * @method setCategory
      * @description Sets which named layer this collider belongs to (its category
@@ -73,13 +82,6 @@ declare class Collider {
         group: number;
     } | null;
     /**
-     * @method _applyFilterSpec
-     * @description Applies a friendly filter spec from a constructor, accepting
-     * layer names or raw bits. Spec: { category, collidesWith, group }.
-     * @private
-     */
-    private _applyFilterSpec;
-    /**
      * @method getRigidBody
      * @description Returns the rigidbody of the collider
      */
@@ -88,7 +90,7 @@ declare class Collider {
      * @method getCollider
      * @description Returns the collider
      */
-    getCollider(): any;
+    getCollider(): import("../physics/Fixture.js").Fixture;
     /**
      * @method setParent
      * @description Sets the parent object of the collider
@@ -100,3 +102,4 @@ declare class Collider {
      */
     getParent(): any;
 }
+import type Transform from "../Transform.js";

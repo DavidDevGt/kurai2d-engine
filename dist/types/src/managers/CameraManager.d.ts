@@ -1,4 +1,6 @@
 export default CameraManager;
+/** @import { Vector2 } from "../Physics.js" */
+/** @import Camera from "../Camera.js" */
 /**
  * @class CameraManager
  * @description Manages the camera for the game
@@ -33,3 +35,5 @@ declare namespace CameraManager {
     let camera: any;
     let lastPosition: any;
 }
+import type { Vector2 } from "../Physics.js";
+import type Camera from "../Camera.js";

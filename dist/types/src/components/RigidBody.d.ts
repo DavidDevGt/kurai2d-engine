@@ -1,4 +1,12 @@
 export default RigidBody;
+/** @import { Physics } from "../Physics.js" */
+/** @import GameObject from "./GameObject.js" */
+/** @import Transform from "../Transform.js" */
+/** @import { Shape } from "../physics/Shapes.js" */
+/** @import { Fixture } from "../physics/Fixture.js" */
+/** @import { Contact } from "../physics/Contact.js" */
+/** @import World from "../physics/World.js" */
+/** @import { Body } from "../physics/Body.js" */
 /**
  * @class RigidBody
  * @description The game-facing physics body: everything you can do to a body
@@ -454,3 +462,11 @@ declare class RigidBody {
 }
 import { Vector2 } from "../Physics.js";
 import Collider from "./Collider.js";
+import type Transform from "../Transform.js";
+import type { Shape } from "../physics/Shapes.js";
+import type { Fixture } from "../physics/Fixture.js";
+import type { Contact } from "../physics/Contact.js";
+import type World from "../physics/World.js";
+import type { Body } from "../physics/Body.js";
+import type { Physics } from "../Physics.js";
+import type GameObject from "./GameObject.js";

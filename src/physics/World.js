@@ -12,6 +12,9 @@ import { JointType } from "./Joint.js";
 import DistanceJoint from "./DistanceJoint.js";
 import RevoluteJoint from "./RevoluteJoint.js";
 
+/** @import { Joint } from "./Joint.js" */
+/** @import { Contact } from "./Contact.js" */
+
 /**
  * @function removeFrom
  * @description Splices the first occurrence of `item` out of `array`.
@@ -34,7 +37,7 @@ const EVENTS = [
 /**
  * @class World
  * @description The physics world: it owns the bodies, finds which ones touch,
- * and advances them all by one time step. This is Emerald's own rigid-body
+ * and advances them all by one time step. This is Kurai2D's own rigid-body
  * engine: broadphase, narrowphase, an impulse solver and continuous collision
  * detection, with no external physics dependency.
  *

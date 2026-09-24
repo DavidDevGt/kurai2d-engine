@@ -1,12 +1,20 @@
-# Emerald
+# Kurai2D Engine
 
-Emerald is a comprehensive 2D graphics engine that can help you create games easier than ever.
+[![CI](https://github.com/DavidDevGt/kurai2d-engine/actions/workflows/ci.yml/badge.svg)](https://github.com/DavidDevGt/kurai2d-engine/actions/workflows/ci.yml)
+
+Kurai2D is a comprehensive WebGL2 2D engine that can help you create games easier than ever.
 
 **New to the engine?** The [Getting Started guide](docs/getting-started.md) walks from an empty page to a playable sprite with input, tiles, audio, saves, and a debug overlay.
 
+```sh
+npm install kurai2d-engine
+```
+
+Coming from Emerald? See [Migrating from Emerald](#migrating-from-emerald).
+
 ## Table of Contents
 
-- [Emerald](#emerald)
+- [Kurai2D Engine](#kurai2d-engine)
   - [Table of Contents](#table-of-contents)
   - [Getting Started](#getting-started)
   - [Scene](#scene)
@@ -91,7 +99,7 @@ Emerald is a comprehensive 2D graphics engine that can help you create games eas
   - [DebugOverlay](#debugoverlay)
   - [Serializer (save/load scenes)](#serializer-saveload-scenes)
   - [Storage (versioned saves)](#storage-versioned-saves)
-  - [EmeraldDB (IndexedDB saves)](#emeralddb-indexeddb-saves)
+  - [KuraiDB (IndexedDB saves)](#kuraidb-indexeddb-saves)
   - [AssetManager](#assetmanager)
   - [Asset importers (Tiled, Aseprite & Forge)](#asset-importers-tiled-aseprite--forge)
   - [Networking (NetworkManager + Interpolator)](#networking-networkmanager--interpolator)
@@ -100,23 +108,26 @@ Emerald is a comprehensive 2D graphics engine that can help you create games eas
     - [Resolution independence](#resolution-independence)
     - [Auto-pause & lifecycle](#auto-pause--lifecycle)
     - [Production hardening](#production-hardening)
+    - [Multiple engines on one page](#multiple-engines-on-one-page)
+  - [Migrating from Emerald](#migrating-from-emerald)
   - [NPM scripts](#npm-scripts)
+  - [License](#license)
 
 ## Getting Started
 
-To get started with Emerald, you need to have a canvas element in your HTML and import the necessary classes.
+To get started with Kurai2D, you need to have a canvas element in your HTML and import the necessary classes.
 
 ```javascript
-import { Emerald, Scene, Color, SceneManager } from "emeraldengine";
+import { Kurai2D, Scene, Color, SceneManager } from "kurai2d-engine";
 
-const emerald = new Emerald(canvas); // You should pass your own canvas element here
+const engine = new Kurai2D(canvas); // You should pass your own canvas element here
 const scene = new Scene();
 SceneManager.setScene(scene);
 
-emerald.setBackgroundColor(new Color(20, 20, 30, 255)); // color = new Color(r, g, b, a = 255)
+engine.setBackgroundColor(new Color(20, 20, 30, 255)); // color = new Color(r, g, b, a = 255)
 ```
 
-`new Emerald(canvas, { antialias: false })` turns off antialiasing (on by default). Pixel-art games that don't rotate sprites can use it for crisp, exact pixel edges.
+`new Kurai2D(canvas, { antialias: false })` turns off antialiasing (on by default). Pixel-art games that don't rotate sprites can use it for crisp, exact pixel edges.
 
 To draw items on the screen you need some sort of animation loop. You can drive one yourself with `window.requestAnimationFrame`:
 
@@ -125,19 +136,19 @@ let lastTime = 0;
 const animate = (currentTime) => {
   const deltaTime = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
-  emerald.drawScene(scene, deltaTime); // You need this line to tell the engine what to draw
+  engine.drawScene(scene, deltaTime); // You need this line to tell the engine what to draw
   window.requestAnimationFrame(animate);
 };
 animate(0);
 ```
 
-Or let `emerald.run()` own the loop for you. It computes a clamped delta time, pauses automatically when the tab is hidden, and optionally drives a fixed-timestep simulation alongside your rendering:
+Or let `engine.run()` own the loop for you. It computes a clamped delta time, pauses automatically when the tab is hidden, and optionally drives a fixed-timestep simulation alongside your rendering:
 
 ```javascript
-const stop = emerald.run(
+const stop = engine.run(
   (dt, alpha) => {
     world.update(dt);
-    emerald.drawScene(scene, dt);
+    engine.drawScene(scene, dt);
   },
   {
     maxDelta: 0.25, // clamp dt after a tab-switch stall
@@ -145,14 +156,14 @@ const stop = emerald.run(
     fixedUpdate: (step) => physics.process(step),
   }
 );
-// later: stop();  // or emerald.stop();
+// later: stop();  // or engine.stop();
 ```
 
 See [Auto-pause & lifecycle](#auto-pause--lifecycle) for the pause/resume hooks `run()` accepts.
 
 ## Scene
 
-Emerald has multiple scenes support. In order to render any object it has to be added to the scene using the `add` method.
+Kurai2D has multiple scenes support. In order to render any object it has to be added to the scene using the `add` method.
 
 ```javascript
 // Adding an object to the scene
@@ -175,7 +186,7 @@ scene.setIsActive(false); // Deactivate
 `SceneManager` keeps track of which scene is currently active:
 
 ```javascript
-import { SceneManager } from "emeraldengine";
+import { SceneManager } from "kurai2d-engine";
 
 SceneManager.setScene(scene);
 const currentScene = SceneManager.getScene();
@@ -188,7 +199,7 @@ It can also switch scenes behind a fade, wired to `ScreenEffects`. See [Scene Tr
 ### Creating a new GameObject
 
 ```javascript
-import { GameObject, Vector3, Vector2 } from "emeraldengine";
+import { GameObject, Vector3, Vector2 } from "kurai2d-engine";
 /*
     ARGUMENTS:
     1. name: string = Name of the new GameObject
@@ -206,7 +217,7 @@ This will create a new empty GameObject. At this stage you will not see anything
 For your own game logic (rather than rendering/physics), add a `Behaviour` component. It's ticked automatically every frame the object is active.
 
 ```javascript
-import { Behaviour } from "emeraldengine";
+import { Behaviour } from "kurai2d-engine";
 
 class Spinner extends Behaviour {
   start() {
@@ -238,7 +249,7 @@ There are currently 9 components: Texture, InstancedTexture, Square2D, Circle2D,
 #### Texture
 
 ```javascript
-import { Texture } from "emeraldengine";
+import { Texture } from "kurai2d-engine";
 /*
     ARGUMENTS:
     1. texturePath = Specify the path for the texture that you want to use.
@@ -267,14 +278,12 @@ const texture = new Texture(
 gameObject.addComponent(texture);
 ```
 
-![Texture](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/texture.png?raw=true)
-
 #### InstancedTexture
 
 InstancedTexture is perfect for rendering many objects with the same texture efficiently, such as tiles, particles, or repeating elements. The whole batch is drawn in a single draw call. See the [Instance System](#instance-system) section for how to add, manage, and animate instances.
 
 ```javascript
-import { InstancedTexture } from "emeraldengine";
+import { InstancedTexture } from "kurai2d-engine";
 /*
     ARGUMENTS:
     1. texturePath = Specify the path for the texture that you want to use.
@@ -305,32 +314,26 @@ const instancedTexture = new InstancedTexture(
 gameObject.addComponent(instancedTexture);
 ```
 
-![InstancedTexture](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/instancedtexture.png?raw=true)
-
 #### Square2D
 
 ```javascript
-import { Square2D } from "emeraldengine";
+import { Square2D } from "kurai2d-engine";
 let square = new Square2D();
 gameObject.addComponent(square);
 ```
 
-![Square2D](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/square2d.png?raw=true)
-
 #### Triangle2D
 
 ```javascript
-import { Triangle2D } from "emeraldengine";
+import { Triangle2D } from "kurai2d-engine";
 let triangle = new Triangle2D();
 gameObject.addComponent(triangle);
 ```
 
-![Triangle2D](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/triangle2d.png?raw=true)
-
 #### Circle2D
 
 ```javascript
-import { Circle2D } from "emeraldengine";
+import { Circle2D } from "kurai2d-engine";
 /*
     ARGUMENTS:
     1. segments = number of segments that the circle will have. Default is 32.
@@ -339,14 +342,12 @@ let circle = new Circle2D(segments);
 gameObject.addComponent(circle);
 ```
 
-![Circle2D](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/circle2d.png?raw=true)
-
 #### RigidBody
 
 RigidBody is a component that allows you to add physics to your game objects. However, it won't work until you create a Physics instance at the top of your code. `RigidBody` itself is the body: every physics operation (position, velocity, forces, sleep state, mass) is a method on it directly; see [RigidBody methods](#rigidbody-methods) in the Physics Engine section for the full list.
 
 ```javascript
-import { RigidBody, Physics, Vector2 } from "emeraldengine";
+import { RigidBody, Physics, Vector2 } from "kurai2d-engine";
 
 // Create physics engine first
 const physics = new Physics(-70, 32, 2); // gravity, scale, velocityThreshold
@@ -375,7 +376,7 @@ gameObject.addComponent(rigidBody);
 #### BoxCollider
 
 ```javascript
-import { BoxCollider } from "emeraldengine";
+import { BoxCollider } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -401,14 +402,12 @@ const boxCollider = new BoxCollider(
 gameObject.addComponent(boxCollider);
 ```
 
-![BoxCollider](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/boxcollider.png?raw=true)
-
 The `BoxCollider` is specifically made bigger than the `Square2D` component in this image to demonstrate how it works. You can adjust the size of the collider to fit your needs.
 
 #### CircleCollider
 
 ```javascript
-import { CircleCollider } from "emeraldengine";
+import { CircleCollider } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -434,8 +433,6 @@ const circleCollider = new CircleCollider(
 gameObject.addComponent(circleCollider);
 ```
 
-![CircleCollider](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/circlecollider.png?raw=true)
-
 The `CircleCollider` is specifically made bigger than the `Circle2D` component in this image to demonstrate how it works. You can adjust the radius of the collider to fit your needs.
 
 #### PolygonCollider
@@ -443,7 +440,7 @@ The `CircleCollider` is specifically made bigger than the `Circle2D` component i
 For a collision shape a box or circle can't approximate, like ramps, wedges, or arbitrary outlines.
 
 ```javascript
-import { PolygonCollider } from "emeraldengine";
+import { PolygonCollider } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -487,16 +484,12 @@ gameObject.transform.position.z = 0;
 gameObject.transform.position = new Vector3(100, 200, 0);
 ```
 
-![Position](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/position.gif?raw=true)
-
 ### Rotation
 
 ```javascript
 // Set rotation (in radians)
 gameObject.transform.rotation = Math.PI / 4; // 45 degrees
 ```
-
-![Rotation](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/rotation.gif?raw=true)
 
 ### Scale
 
@@ -509,8 +502,6 @@ gameObject.transform.scale.y = 2;
 gameObject.transform.scale = new Vector2(2, 2);
 ```
 
-![Scale](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/scale.gif?raw=true)
-
 ### Change color
 
 ```javascript
@@ -518,8 +509,6 @@ gameObject.transform.scale = new Vector2(2, 2);
 const texture = gameObject.getComponent(Texture);
 texture.setColor(new Color(255, 0, 0)); // Red
 ```
-
-![Change Color](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/changecolor.gif?raw=true)
 
 ### Sprite flipping, pivot & anchor
 
@@ -566,12 +555,10 @@ if (texture.isPlaying) {
 }
 ```
 
-![Animations](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/animations.gif?raw=true)
-
 For named clips instead of raw frame arrays, use `Animator`:
 
 ```javascript
-import { Animator } from "emeraldengine";
+import { Animator } from "kurai2d-engine";
 
 const anim = new Animator();
 anim
@@ -589,7 +576,7 @@ The Instance system allows you to efficiently manage multiple copies of the same
 ### Creating Instances
 
 ```javascript
-import { Instance } from "emeraldengine";
+import { Instance } from "kurai2d-engine";
 
 // Create an instance
 const instance = new Instance(
@@ -642,7 +629,7 @@ instancedTexture.addInstanceHoverEvent(
 Each instance can have an independent RGBA tint (white = unchanged, so existing scenes render identically). The tint multiplies the texture in the shader.
 
 ```javascript
-import { Color } from "emeraldengine";
+import { Color } from "kurai2d-engine";
 
 // On the Instance directly (Color uses 0..255 channels; raw form is 0..1):
 instance.setColor(new Color(255, 120, 60)); // warm tint
@@ -696,12 +683,12 @@ instancedTexture.stopAnimation(); // stop the shared animation on every instance
 
 ## Physics Engine
 
-Emerald ships its own 2D rigid-body physics engine, with no external dependency. It has a dynamic AABB tree broadphase, a separating-axis narrowphase, an impulse solver with warm starting so stacks settle instead of sinking or jittering, island-based sleeping, and continuous collision detection for fast bodies.
+Kurai2D ships its own 2D rigid-body physics engine, with no external dependency. It has a dynamic AABB tree broadphase, a separating-axis narrowphase, an impulse solver with warm starting so stacks settle instead of sinking or jittering, island-based sleeping, and continuous collision detection for fast bodies.
 
 ### Setting up Physics
 
 ```javascript
-import { Physics } from "emeraldengine";
+import { Physics } from "kurai2d-engine";
 /*
     ARGUMENTS:
     1. gravity: number = Gravity force (negative for downward)
@@ -847,7 +834,7 @@ Per-object collision events also fire automatically on `Behaviour` components (`
 `CollisionLayers` maps human-readable layer names to the category bits the physics engine uses for filtering, so you can express "players collide with ground and enemies, but not each other" without juggling bitmasks. Two fixtures collide only when each one's category is in the other's mask.
 
 ```javascript
-import { CollisionLayers } from "emeraldengine";
+import { CollisionLayers } from "kurai2d-engine";
 
 CollisionLayers.define("ground", "player", "enemy", "pickup");
 
@@ -916,14 +903,12 @@ map.setAutoTiledMap(solidGrid, { base: 0, originX: 0, originY: 0 }); // compute 
 
 ## Particle System
 
-Emerald includes a powerful particle system for creating visual effects.
-
-![Particles](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/particles.gif?raw=true)
+Kurai2D includes a powerful particle system for creating visual effects.
 
 ### Particle Settings
 
 ```javascript
-import { ParticleSettings, Vector2, Color } from "emeraldengine";
+import { ParticleSettings, Vector2, Color } from "kurai2d-engine";
 
 const particleSettings = new ParticleSettings({
   lifetime: 1.2,
@@ -961,7 +946,7 @@ const particleSettings = new ParticleSettings({
 ### Creating Particle Systems
 
 ```javascript
-import { Particles } from "emeraldengine";
+import { Particles } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -1015,7 +1000,7 @@ if (particles.active) {
 If you don't need per-particle curves, `ParticleEmitter` is a simpler, allocation-free system built from a fixed pool of textured GameObjects, good for one-off bursts (dust, sparkles, confetti, hit effects). Spawn with `burst(n, cfg)` / `emit(cfg)`; every `cfg` field is optional.
 
 ```javascript
-import { ParticleEmitter } from "emeraldengine";
+import { ParticleEmitter } from "kurai2d-engine";
 
 const fx = new ParticleEmitter(scene, {
   texture: "spark.png",
@@ -1056,19 +1041,19 @@ fx.destroy(); // remove pooled objects from the scene
 
 ## Lighting System
 
-Emerald supports ambient, point, and directional lighting.
+Kurai2D supports ambient, point, and directional lighting.
 
 ### Ambient Light
 
 ```javascript
 // Set ambient light
-emerald.setAmbientLight(new Vector3(0.3, 0.3, 0.3)); // RGB values 0-1
+engine.setAmbientLight(new Vector3(0.3, 0.3, 0.3)); // RGB values 0-1
 ```
 
 ### Point Light
 
 ```javascript
-import { PointLight } from "emeraldengine";
+import { PointLight } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -1085,7 +1070,7 @@ const pointLight = new PointLight(
 );
 
 // Add to engine
-emerald.addPointLight(pointLight);
+engine.addPointLight(pointLight);
 
 // Update position
 pointLight.position.x = newX;
@@ -1095,7 +1080,7 @@ pointLight.position.y = newY;
 ### Directional Light
 
 ```javascript
-import { DirectionalLight } from "emeraldengine";
+import { DirectionalLight } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -1114,7 +1099,7 @@ const directionalLight = new DirectionalLight(
 );
 
 // Add to engine
-emerald.addDirectionalLight(directionalLight);
+engine.addDirectionalLight(directionalLight);
 
 // Rotate direction
 const angle = 0.1;
@@ -1132,12 +1117,10 @@ directionalLight.direction.y = newY;
 
 ### BitmapText
 
-Emerald supports bitmap font rendering using the BitmapText component. This allows you to display text with custom fonts and styles.
-
-![BitmapText](https://github.com/vahan-gev/emeralddocs/blob/main/github/screenshots/bitmaptext.png?raw=true)
+Kurai2D supports bitmap font rendering using the BitmapText component. This allows you to display text with custom fonts and styles.
 
 ```javascript
-import { BitmapText } from "emeraldengine";
+import { BitmapText } from "kurai2d-engine";
 
 /*
     ARGUMENTS:
@@ -1188,7 +1171,7 @@ bitmapText.setLetterSpacing(20);
 `CanvasText` renders any CSS font (including loaded webfonts) into a texture, at the device pixel ratio so text is crisp on Retina/HiDPI displays, with support for multi-line strings, word-wrapping, and alignment. Use `BitmapText` for retro/pixel fonts from a glyph sheet, `CanvasText` for everything else (UI, dialogue, any real font).
 
 ```javascript
-import { CanvasText } from "emeraldengine";
+import { CanvasText } from "kurai2d-engine";
 
 // Factory: returns a GameObject already sized to the text
 const label = CanvasText.create("Score: 0", {
@@ -1215,14 +1198,12 @@ text.setAlign("center"); // "left" | "center" | "right"
 
 ## Input
 
-Emerald supports keyboard, mouse, click, and hover events through the built-in `EventManager` class, plus a higher-level action-mapping `InputManager` for gameplay input (keyboard, mouse and gamepad through one API).
-
-![EventManager](https://github.com/vahan-gev/emeralddocs/blob/main/github/videos/eventmanager.gif?raw=true)
+Kurai2D supports keyboard, mouse, click, and hover events through the built-in `EventManager` class, plus a higher-level action-mapping `InputManager` for gameplay input (keyboard, mouse and gamepad through one API).
 
 ```javascript
-import { EventManager } from "emeraldengine";
+import { EventManager } from "kurai2d-engine";
 
-let eventManager = new EventManager(canvas, scene, emerald.camera);
+let eventManager = new EventManager(canvas, scene, engine.camera);
 ```
 
 `EventManager` hits only the topmost object under the pointer, and its `screenToWorld(clientX, clientY)` accounts for camera zoom, DPR, and viewport.
@@ -1303,7 +1284,7 @@ eventManager.changeScene(newScene);
 For gameplay, `InputManager` lets you bind named actions once and read them everywhere: keyboard keys, mouse buttons, gamepad buttons and analog stick directions are all just tokens:
 
 ```javascript
-import { InputManager } from "emeraldengine";
+import { InputManager } from "kurai2d-engine";
 const input = new InputManager();
 input.mapAction("jump", ["Space", " ", "pad:0:south"]); // keyboard + gamepad
 input.mapAction("left", ["a", "ArrowLeft", "pad:0:dpadLeft"]);
@@ -1320,7 +1301,7 @@ Full controller support is built into `InputManager`: analog sticks/triggers, se
 `pad:<i>:<name>` targets pad index `<i>`. Names resolve through the pad's mapping, so `south` is always the bottom face button whether the pad reports Xbox or PlayStation ordering:
 
 | Tokens                                                                                | Buttons                                |
-| -------------------------------------------------------------------------------------- | --------------------------------------- |
+| ------------------------------------------------------------------------------------- | -------------------------------------- |
 | `south`/`a`/`cross`, `east`/`b`/`circle`, `west`/`x`/`square`, `north`/`y`/`triangle` | face buttons                           |
 | `l1`/`lb`, `r1`/`rb`, `l2`/`lt`, `r2`/`rt`                                            | shoulders / triggers                   |
 | `select`/`back`/`view`/`share`, `start`/`menu`/`options`, `guide`/`home`              | center                                 |
@@ -1376,18 +1357,24 @@ D-pads reported as a hat axis (instead of buttons 12–15) are decoded into the 
 
 ## AudioManager
 
-Emerald includes a comprehensive audio management system.
+Kurai2D includes a comprehensive audio management system.
 
 ### Adding Audio
 
 ```javascript
-import { AudioManager } from "emeraldengine";
+import { AudioManager } from "kurai2d-engine";
 
 const audioManager = new AudioManager();
 
 // Add audio files
-audioManager.add("path/to/sound.wav", "soundName", { volume: 0.8, loop: false });
-audioManager.add("path/to/music.mp3", "backgroundMusic", { bus: "music", loop: true });
+audioManager.add("path/to/sound.wav", "soundName", {
+  volume: 0.8,
+  loop: false,
+});
+audioManager.add("path/to/music.mp3", "backgroundMusic", {
+  bus: "music",
+  loop: true,
+});
 ```
 
 ### Playing Audio
@@ -1456,28 +1443,28 @@ const { volume, pan, distance } = audioManager.computeSpatial({ x, y });
 
 ## Camera
 
-The engine has simple controls for the camera. The camera is stored in the emerald variable.
+The engine has simple controls for the camera. The camera is stored in the engine variable.
 
 ```javascript
 // Set camera position
-emerald.camera.setPosition(x, y, z);
-emerald.camera.setZoom(1.5);
+engine.camera.setPosition(x, y, z);
+engine.camera.setZoom(1.5);
 
 // Access camera transform directly
-emerald.camera.transform.position.x = 100;
-emerald.camera.transform.position.y = 200;
-emerald.camera.transform.scale.x = 1.5;
-emerald.camera.transform.scale.y = 1.5;
+engine.camera.transform.position.x = 100;
+engine.camera.transform.position.y = 200;
+engine.camera.transform.scale.x = 1.5;
+engine.camera.transform.scale.y = 1.5;
 ```
 
 Multiple cameras are supported, each with a normalized viewport (origin bottom-left), useful for split-screen:
 
 ```javascript
-import { Camera, CameraController } from "emeraldengine";
+import { Camera, CameraController } from "kurai2d-engine";
 
 const top = new Camera({ viewport: { x: 0, y: 0.5, width: 1, height: 0.5 } });
 const bottom = new Camera({ viewport: { x: 0, y: 0, width: 1, height: 0.5 } });
-emerald.setCameras([top, bottom]); // or emerald.addCamera(cam) / removeCamera(cam)
+engine.setCameras([top, bottom]); // or engine.addCamera(cam) / removeCamera(cam)
 
 top.clearColor = new Color(10, 14, 20); // optional per-viewport clear
 top.setIgnoreLayers([11, 20]); // skip these object layers in this camera
@@ -1486,7 +1473,7 @@ top.setIgnoreLayers([11, 20]); // skip these object layers in this camera
 `CameraController` adds smooth follow, bounds, a deadzone, and shake:
 
 ```javascript
-const cam = new CameraController(emerald.camera);
+const cam = new CameraController(engine.camera);
 cam
   .follow(player.gameObject, 0.12)
   .setDeadzone(90, 60) // half-extents in world units; camera only scrolls once the target leaves this box; 0/0 or null disables
@@ -1497,14 +1484,14 @@ cam.shake(10, 0.3);
 
 ## FPSCounter
 
-Emerald has a built-in FPS counter.
+Kurai2D has a built-in FPS counter.
 
 ```javascript
-import { FPSCounter } from "emeraldengine";
+import { FPSCounter } from "kurai2d-engine";
 let fpsCounter = new FPSCounter();
 
 const animate = (currentTime) => {
-  emerald.drawScene(scene, deltaTime);
+  engine.drawScene(scene, deltaTime);
   fpsCounter.update(); // Call this in your animation loop
   window.requestAnimationFrame(animate);
 };
@@ -1514,14 +1501,14 @@ animate();
 ## Time Management
 
 ```javascript
-import { Time } from "emeraldengine";
+import { Time } from "kurai2d-engine";
 
 // Get delta time
 const deltaTime = Time.deltaTime; // or Time.getDeltaTime()
 Time.getUnscaledDeltaTime(); // raw delta, ignores timeScale
 Time.getElapsedTime(); // total accumulated time
 
-// Time is automatically updated when you call emerald.drawScene()
+// Time is automatically updated when you call engine.drawScene()
 // You can also manually set it
 Time.setDeltaTime(deltaTime);
 
@@ -1533,7 +1520,7 @@ Time.getTimeScale();
 ## Tween, Timer & StateMachine
 
 ```javascript
-import { Tween, Easing } from "emeraldengine";
+import { Tween, Easing } from "kurai2d-engine";
 Tween.to(sprite.transform.position, { x: 200, y: -50 }, 0.6, {
   easing: Easing.outBack, // linear, inOutQuad, outCubic, outBounce, outElastic, ...
   delay: 0,
@@ -1548,7 +1535,7 @@ Tween.killAll();
 ```
 
 ```javascript
-import { Timer } from "emeraldengine";
+import { Timer } from "kurai2d-engine";
 Timer.after(2, () => spawnEnemy()); // once
 const h = Timer.every(0.5, () => tick(), 10); // 10 times (omit count = forever)
 Timer.clear(h);
@@ -1556,7 +1543,7 @@ Timer.clearAll();
 ```
 
 ```javascript
-import { StateMachine } from "emeraldengine";
+import { StateMachine } from "kurai2d-engine";
 const fsm = new StateMachine();
 fsm.add("idle", {
   update: (dt, sm) => {
@@ -1571,7 +1558,7 @@ fsm.set("idle");
 ## SpatialGrid & Pool
 
 ```javascript
-import { SpatialGrid } from "emeraldengine";
+import { SpatialGrid } from "kurai2d-engine";
 const grid = new SpatialGrid(64);
 grid.clear();
 for (const e of enemies)
@@ -1580,7 +1567,7 @@ const near = grid.queryRadius(px, py, 100); // or grid.queryRect(...)
 ```
 
 ```javascript
-import { Pool } from "emeraldengine";
+import { Pool } from "kurai2d-engine";
 const bullets = new Pool(
   () => new Bullet(),
   (b, x, y) => b.spawn(x, y),
@@ -1593,7 +1580,7 @@ bullets.release(b); // bullets.releaseAll()
 ## MathUtils
 
 ```javascript
-import { MathUtils } from "emeraldengine";
+import { MathUtils } from "kurai2d-engine";
 MathUtils.clamp(v, 0, 1);
 MathUtils.lerp(a, b, t);
 MathUtils.map(v, 0, 10, 0, 100);
@@ -1607,10 +1594,10 @@ MathUtils.angleBetween(a, b);
 
 ## Coroutines
 
-Generator-based sequencing layered on the same per-frame delta the rest of the engine uses. It's driven automatically from `Emerald.drawScene`, so coroutines honor pause/slow-mo via `Time.timeScale`.
+Generator-based sequencing layered on the same per-frame delta the rest of the engine uses. It's driven automatically from `Kurai2D.drawScene`, so coroutines honor pause/slow-mo via `Time.timeScale`.
 
 ```javascript
-import { Coroutine } from "emeraldengine";
+import { Coroutine } from "kurai2d-engine";
 
 const handle = Coroutine.start(function* () {
   big.setText("3");
@@ -1640,14 +1627,14 @@ Coroutine.clearAll(); // cancel + remove every coroutine (e.g. on scene exit)
 
 ### Post-processing
 
-When post-processing is enabled, Emerald renders the whole scene into an offscreen texture and then runs a chain of full-screen shader passes before drawing the final image to the canvas. You manage it entirely through the `Emerald` instance:
+When post-processing is enabled, Kurai2D renders the whole scene into an offscreen texture and then runs a chain of full-screen shader passes before drawing the final image to the canvas. You manage it entirely through the `Kurai2D` instance:
 
 ```javascript
-emerald.enablePostProcessing(); // allocate the scene render target + processor
-emerald.disablePostProcessing(); // turn it back off
+engine.enablePostProcessing(); // allocate the scene render target + processor
+engine.disablePostProcessing(); // turn it back off
 
-const bloom = emerald.addPostEffect(PostEffects.bloom()); // returns the effect
-emerald.removePostEffect(bloom);
+const bloom = engine.addPostEffect(PostEffects.bloom()); // returns the effect
+engine.removePostEffect(bloom);
 
 // Effects run in the order they were added. Toggle one without removing it:
 bloom.enabled = false;
@@ -1658,7 +1645,7 @@ bloom.enabled = false;
 Write a custom pass by constructing a `PostEffect`. Your fragment shader (GLSL ES 3.00) gets `vUV` (0–1 screen UV), `uScene` (the previous pass), `uResolution`, and `uTime` for free, and writes its result to `fragColor`. Declare any extra uniforms and set them in `setUniforms`:
 
 ```javascript
-import { PostEffect } from "emeraldengine";
+import { PostEffect } from "kurai2d-engine";
 
 const tint = new PostEffect(
   "tint",
@@ -1672,14 +1659,14 @@ const tint = new PostEffect(
     enabled: true,
   }
 );
-emerald.addPostEffect(tint);
+engine.addPostEffect(tint);
 ```
 
 Keep UI crisp by rendering it on a camera excluded from post-processing: it draws straight to the screen after the effect chain, so bloom never blows out your buttons and text:
 
 ```javascript
 const uiCam = new Camera({ excludeFromPost: true }); // or uiCam.setExcludeFromPost(true)
-emerald.addCamera(uiCam);
+engine.addCamera(uiCam);
 hudObject.setLayer(100); // and restrict cameras via setOnlyLayers/ignoreLayers
 ```
 
@@ -1688,35 +1675,35 @@ hudObject.setLayer(100); // and restrict cameras via setOnlyLayers/ignoreLayers
 Factory functions on the `PostEffects` namespace return a ready `PostEffect`:
 
 ```javascript
-import { PostEffects } from "emeraldengine";
+import { PostEffects } from "kurai2d-engine";
 
-emerald.enablePostProcessing();
-emerald.addPostEffect(
+engine.enablePostProcessing();
+engine.addPostEffect(
   PostEffects.bloom({ threshold: 0.6, intensity: 1.2, spread: 1.1 })
 );
-emerald.addPostEffect(
+engine.addPostEffect(
   PostEffects.vignette({ intensity: 0.5, radius: 0.75, softness: 0.45 })
 );
-emerald.addPostEffect(
+engine.addPostEffect(
   PostEffects.colorGrade({ brightness: 0.02, contrast: 1.08, saturation: 1.15 })
 );
-emerald.addPostEffect(PostEffects.chromaticAberration({ amount: 0.003 }));
-emerald.addPostEffect(PostEffects.scanlines({ intensity: 0.15, count: 480 }));
-emerald.addPostEffect(
+engine.addPostEffect(PostEffects.chromaticAberration({ amount: 0.003 }));
+engine.addPostEffect(PostEffects.scanlines({ intensity: 0.15, count: 480 }));
+engine.addPostEffect(
   PostEffects.crt({ curvature: 4.0, scanlineIntensity: 0.2, vignette: 0.3 })
 );
-emerald.addPostEffect(PostEffects.grayscale());
+engine.addPostEffect(PostEffects.grayscale());
 ```
 
 | Effect                | Options (defaults)                                          |
-| --------------------- | ------------------------------------------------------------ |
-| `bloom`               | `threshold 0.7`, `intensity 1.0`, `spread 1.0` (multi-pass)  |
-| `vignette`            | `intensity 0.5`, `radius 0.75`, `softness 0.45`              |
-| `colorGrade`          | `brightness 0`, `contrast 1`, `saturation 1`                 |
-| `chromaticAberration` | `amount 0.003`                                                |
-| `scanlines`           | `intensity 0.15`, `count 480`                                 |
-| `crt`                 | `curvature 4.0`, `scanlineIntensity 0.2`, `vignette 0.3`     |
-| `grayscale`           | none                                                           |
+| --------------------- | ----------------------------------------------------------- |
+| `bloom`               | `threshold 0.7`, `intensity 1.0`, `spread 1.0` (multi-pass) |
+| `vignette`            | `intensity 0.5`, `radius 0.75`, `softness 0.45`             |
+| `colorGrade`          | `brightness 0`, `contrast 1`, `saturation 1`                |
+| `chromaticAberration` | `amount 0.003`                                              |
+| `scanlines`           | `intensity 0.15`, `count 480`                               |
+| `crt`                 | `curvature 4.0`, `scanlineIntensity 0.2`, `vignette 0.3`    |
+| `grayscale`           | none                                                        |
 
 `bloom` is exported as a class too (`BloomEffect`) if you want to subclass it.
 
@@ -1725,7 +1712,7 @@ emerald.addPostEffect(PostEffects.grayscale());
 An offscreen framebuffer backed by a color texture (and an optional depth buffer). Used internally by the post-processor, but useful on its own for minimaps, mirrors, or picture-in-picture.
 
 ```javascript
-import { RenderTarget } from "emeraldengine";
+import { RenderTarget } from "kurai2d-engine";
 
 const rt = new RenderTarget(512, 512, { depth: false, pixelart: false });
 rt.bind(); // binds the FBO and sets the viewport to its size
@@ -1743,7 +1730,7 @@ A `Material` replaces a Drawable's fragment shader while reusing the engine's st
 Older shaders written with `texture2D` and `gl_FragColor` keep working unchanged.
 
 ```javascript
-import { Material, Square2D } from "emeraldengine";
+import { Material, Square2D } from "kurai2d-engine";
 
 const dissolve = new Material(
   `
@@ -1771,7 +1758,7 @@ dissolve.set("uPulse", () => 0.5 + 0.5 * Math.sin(performance.now() / 300));
 A dynamic batched renderer with its own minimal shader. Instead of one draw call per sprite, it accumulates sprites that share a texture into a single interleaved buffer and submits them in one `drawElements` call, ideal for many same-atlas quads (bullets, tiles, text glyphs).
 
 ```javascript
-import { SpriteBatch } from "emeraldengine";
+import { SpriteBatch } from "kurai2d-engine";
 
 const batch = new SpriteBatch({ maxQuads: 2000 });
 batch.begin(projectionMatrix, viewMatrix); // gl-matrix mat4 / Float32Array(16)
@@ -1799,7 +1786,7 @@ batch.end(); // flushes remaining sprites
 console.log(batch.drawCalls); // GL draw calls emitted this frame
 ```
 
-Also worth knowing about: `obj.setLayer(10)` (layers sort before z), `hudObj.setScreenSpace(true)` (ignore the camera, position in pixels from viewport center), `drawable.setBlendMode("additive" | "normal" | "multiply")`, off-screen culling (`emerald.setCullingEnabled(true)`, `particles.alwaysVisible = true` to opt out), `TextureAtlas.load`/`applyTo` for atlas sub-rects, and `TextureManager.preload([...])` for shared/cached GL textures.
+Also worth knowing about: `obj.setLayer(10)` (layers sort before z), `hudObj.setScreenSpace(true)` (ignore the camera, position in pixels from viewport center), `drawable.setBlendMode("additive" | "normal" | "multiply")`, off-screen culling (`engine.setCullingEnabled(true)`, `particles.alwaysVisible = true` to opt out), `TextureAtlas.load`/`applyTo` for atlas sub-rects, and `TextureManager.preload([...])` for shared/cached GL textures.
 
 ## In-Engine UI
 
@@ -1808,11 +1795,11 @@ Also worth knowing about: `obj.setLayer(10)` (layers sort before z), `hudObj.set
 Pair it with a UI camera so the UI draws over the game and the game cameras skip the UI layer:
 
 ```javascript
-import { UI } from "emeraldengine";
+import { UI } from "kurai2d-engine";
 
 const uiCam = UI.createCamera(); // a full-screen camera that renders ONLY UI.LAYER
 gameCamera.ignoreLayer(UI.LAYER); // keep the UI out of the game viewport(s)
-emerald.setCameras([gameCamera, uiCam]); // add the UI camera last
+engine.setCameras([gameCamera, uiCam]); // add the UI camera last
 
 const ui = new UI(scene, canvas, { accent: [120, 200, 255] });
 
@@ -1854,7 +1841,7 @@ UI.LAYER; // 100000, the default UI render layer
 Full-screen camera transitions drawn with the engine's own screen-space quads (no CSS overlay), so they survive resolution changes, post-processing and split-screen. `fadeOut`/`fadeIn`/`flash` return promises. Call `update(dt)` each frame before `drawScene`.
 
 ```javascript
-import { ScreenEffects, Color } from "emeraldengine";
+import { ScreenEffects, Color } from "kurai2d-engine";
 
 const fx = new ScreenEffects(scene, { layer: 100000, size: 5000 });
 
@@ -1873,12 +1860,12 @@ fx.destroy();
 
 ## Scene Transitions & the Game Loop
 
-`emerald.run(update, options)` (see [Getting Started](#getting-started)) computes a clamped delta time, optionally advances a fixed-timestep simulation, and calls your `update(dt, alpha)` each frame. `alpha` is the 0..1 interpolation factor between fixed steps (1 when no fixed step is configured).
+`engine.run(update, options)` (see [Getting Started](#getting-started)) computes a clamped delta time, optionally advances a fixed-timestep simulation, and calls your `update(dt, alpha)` each frame. `alpha` is the 0..1 interpolation factor between fixed steps (1 when no fixed step is configured).
 
 Switch scenes behind a fade with `SceneManager.transitionTo` (wired to `ScreenEffects`), or drive the fade directly with `ScreenEffects.transition`:
 
 ```javascript
-import { SceneManager, ScreenEffects, Color } from "emeraldengine";
+import { SceneManager, ScreenEffects, Color } from "kurai2d-engine";
 
 const fx = new ScreenEffects(overlayScene); // update()'d each frame by your loop
 
@@ -1896,21 +1883,21 @@ await fx.transition(() => swapScenes(), { duration: 0.4 });
 ## DebugOverlay
 
 ```javascript
-import { DebugOverlay } from "emeraldengine";
+import { DebugOverlay } from "kurai2d-engine";
 
 const debug = new DebugOverlay();
 debug.setVisible(true); // toggle (e.g. bind to F3)
 debug.setMetric("enemies", enemies.length); // add/refresh a custom row
 debug.showColliders(scene, true); // overlay collider shapes for the scene
 // after drawScene each frame:
-debug.update(emerald, scene); // FPS / frame-time graph / objects / cameras
+debug.update(engine, scene); // FPS / frame-time graph / objects / cameras
 debug.destroy();
 ```
 
 It shows a frame-time sparkline with min/avg/max milliseconds and heap usage, and its `draws`/`quads`/`binds` numbers come from the same render stats you can read yourself:
 
 ```javascript
-const { drawCalls, quads, textureBinds } = emerald.getRenderStats();
+const { drawCalls, quads, textureBinds } = engine.getRenderStats();
 ```
 
 Draw calls growing with level size means something isn't batched. Use `Tilemap`, `SpriteBatch`, or the level loader's instanced tile path.
@@ -1918,7 +1905,7 @@ Draw calls growing with level size means something isn't batched. Use `Tilemap`,
 ## Serializer (save/load scenes)
 
 ```javascript
-import { Serializer } from "emeraldengine";
+import { Serializer } from "kurai2d-engine";
 Serializer.register("coin", (data) => makeCoin(data.value));
 coin.prefabType = "coin";
 coin.serialize = () => ({ value: 5 });
@@ -1931,7 +1918,7 @@ Serializer.fromJSON(json, new Scene()); // load
 `Storage.save`/`Storage.load` wrap your data in a versioned envelope (`{ v, t, data }`) with an automatic `.bak` mirror, so saves survive both corrupted writes (a torn write recovers from backup) and schema changes (old saves migrate forward instead of being discarded):
 
 ```javascript
-import { Storage } from "emeraldengine";
+import { Storage } from "kurai2d-engine";
 
 // Write: version + timestamp envelope, plus a .bak backup by default.
 Storage.save("profile", { level: 3, coins: 120 }, { version: 2 });
@@ -1953,42 +1940,42 @@ Storage.removeSave("profile"); // deletes the save AND its backup
 
 Plain pre-versioning values load as version 0, so adopting the envelope on an existing game is safe. For raw key/value access, `Storage.saveToLocalStorage`/`readFromLocalStorage` still exist.
 
-## EmeraldDB (IndexedDB saves)
+## KuraiDB (IndexedDB saves)
 
-`Storage` lives on localStorage, which caps out around 5MB: plenty for settings and high scores, not for a big persistent world. `EmeraldDB` is the async, big-world companion: same versioned envelope, `.bak` backup, and migration semantics, backed by IndexedDB (effectively unlimited), and values are structured-cloned (no JSON round-trip), so Maps, Sets, Dates, and typed arrays save as-is.
+`Storage` lives on localStorage, which caps out around 5MB: plenty for settings and high scores, not for a big persistent world. `KuraiDB` is the async, big-world companion: same versioned envelope, `.bak` backup, and migration semantics, backed by IndexedDB (effectively unlimited), and values are structured-cloned (no JSON round-trip), so Maps, Sets, Dates, and typed arrays save as-is.
 
 ```javascript
-import { EmeraldDB } from "emeraldengine";
+import { KuraiDB } from "kurai2d-engine";
 
 // Versioned world save, mirrors Storage.save/load, but async:
-await EmeraldDB.save("world", world, { version: 3 });
-const world = await EmeraldDB.load("world", {
+await KuraiDB.save("world", world, { version: 3 });
+const world = await KuraiDB.load("world", {
   version: 3,
   fallback: makeNewWorld(),
   migrate: (old, fromVersion) => upgradeWorld(old, fromVersion),
 });
-await EmeraldDB.hasSave("world"); // true (checks the .bak too)
-await EmeraldDB.removeSave("world"); // deletes save + backup
+await KuraiDB.hasSave("world"); // true (checks the .bak too)
+await KuraiDB.removeSave("world"); // deletes save + backup
 
 // Plain async key/value (no envelope):
-await EmeraldDB.set("settings", { volume: 0.8, keybinds: new Map() });
-const settings = await EmeraldDB.get("settings", {});
-await EmeraldDB.keys(); // every key in the store
+await KuraiDB.set("settings", { volume: 0.8, keybinds: new Map() });
+const settings = await KuraiDB.get("settings", {});
+await KuraiDB.keys(); // every key in the store
 
 // Optional setup:
-EmeraldDB.configure({ name: "my-game", store: "saves" }); // before first use
-EmeraldDB.isSupported(); // feature-detect (falls back to Storage if false)
-await EmeraldDB.importFromStorage("profile"); // one-time upgrade of an old localStorage save
+KuraiDB.configure({ name: "my-game", store: "saves" }); // before first use
+KuraiDB.isSupported(); // feature-detect (falls back to Storage if false)
+await KuraiDB.importFromStorage("profile"); // one-time upgrade of an old localStorage save
 ```
 
-Rule of thumb: `Storage` for small synchronous bits (settings, best times), `EmeraldDB` for the world.
+Rule of thumb: `Storage` for small synchronous bits (settings, best times), `KuraiDB` for the world.
 
 ## AssetManager
 
 One async loader for everything a game needs at startup: images/textures, audio, JSON, text, and web fonts, with deduplication and aggregate progress for a loading bar. Images are routed through `TextureManager`, so the GL upload cache is shared with the rest of the engine.
 
 ```javascript
-import { AssetManager } from "emeraldengine";
+import { AssetManager } from "kurai2d-engine";
 
 const assets = new AssetManager();
 assets
@@ -2011,10 +1998,10 @@ assets.clear();
 
 ## Asset importers (Tiled, Aseprite & Forge)
 
-Import maps from [Tiled](https://www.mapeditor.org), sprite-sheet animations from [Aseprite](https://www.aseprite.org), and levels from Emerald's own Tile Forge editor. All three are pure parsers/builders: hand them the already-parsed JSON (load it with `AssetManager.json` or `fetch`).
+Import maps from [Tiled](https://www.mapeditor.org), sprite-sheet animations from [Aseprite](https://www.aseprite.org), and levels from the Tile Forge editor. All three are pure parsers/builders: hand them the already-parsed JSON (load it with `AssetManager.json` or `fetch`).
 
 ```javascript
-import { TiledMap } from "emeraldengine";
+import { TiledMap } from "kurai2d-engine";
 
 // Build a ready-to-render Tilemap from a Tiled JSON map + its tile sheet.
 const map = TiledMap.toTilemap(mapJson, "tiles.png", { layer: "ground" });
@@ -2031,7 +2018,7 @@ const spawns = TiledMap.objects(mapJson, { layer: "spawns", flipY: true });
 ```
 
 ```javascript
-import { Aseprite, Texture, Animator } from "emeraldengine";
+import { Aseprite, Texture, Animator } from "kurai2d-engine";
 
 const cfg = Aseprite.spriteConfig(sheetJson); // { frameWidth, frameHeight, framesPerRow, totalFrames }
 const tex = new Texture(
@@ -2055,7 +2042,7 @@ Aseprite.toClips(sheetJson); // -> [{ name, frames:[...], speed }]
 ```
 
 ```javascript
-import { ForgeLevel } from "emeraldengine";
+import { ForgeLevel } from "kurai2d-engine";
 
 /*
     ARGUMENTS (options object):
@@ -2070,7 +2057,7 @@ import { ForgeLevel } from "emeraldengine";
 // The simplest load: a visual level with no physics.
 const map = ForgeLevel.load(levelJson, { scene });
 
-emerald.setBackgroundColor(Color.fromHex(map.background));
+engine.setBackgroundColor(Color.fromHex(map.background));
 // map -> { tileSize, cols, rows, width, height, background, bounds,
 //          layers, colliders, objects, entityTypes, toWorld }
 ```
@@ -2084,7 +2071,7 @@ const map = ForgeLevel.load(levelJson, { scene, physics });
 If your game uses [collision layers](#collision-layers), also pass a `filter` that says which layer the level's tiles belong to. Define your layers once, before loading, and use the same names in the filter:
 
 ```javascript
-import { CollisionLayers } from "emeraldengine";
+import { CollisionLayers } from "kurai2d-engine";
 
 CollisionLayers.define("ground", "player"); // once, at startup
 
@@ -2118,7 +2105,7 @@ for (const object of map.objects) {
 A thin, optional multiplayer layer over [Colyseus](https://colyseus.io). `colyseus.js` is a peer dependency imported dynamically, so games that don't use networking never load it.
 
 ```javascript
-import { NetworkManager } from "emeraldengine";
+import { NetworkManager } from "kurai2d-engine";
 
 const net = new NetworkManager({ interpolation: { delay: 0.1 } });
 await net.connect("wss://my-server:2567"); // dynamically imports colyseus.js
@@ -2141,7 +2128,7 @@ const pos = net.interpolator.sample(remoteId, net.now()); // { x, y } | null
 `Interpolator` is also exported standalone and is pure (no network/DOM), so you can use it with any transport or in tests:
 
 ```javascript
-import { Interpolator } from "emeraldengine";
+import { Interpolator } from "kurai2d-engine";
 
 const interp = new Interpolator({ delay: 0.1, maxBuffer: 60 });
 interp.push(entityId, { x, y }, serverTimeSeconds); // on each authoritative update
@@ -2159,7 +2146,7 @@ interp.clear();
 // Handle window resize
 const handleResize = () => {
   const { width, height } = getCanvasDimensions();
-  emerald.resize(width, height);
+  engine.resize(width, height);
 };
 
 window.addEventListener("resize", handleResize);
@@ -2171,18 +2158,18 @@ Author your game at one fixed resolution and let the engine scale it to any scre
 
 ```javascript
 // Design at 960x540, letterboxed onto whatever screen the player has:
-emerald.setDesignResolution(960, 540, "fit");
+engine.setDesignResolution(960, 540, "fit");
 
 // Modes:
 //  "fit"     letterbox: whole design visible, bars if aspect differs
 //  "fill"    cover: fills the screen, crops the overflow
 //  "stretch" distorts to fill exactly (no bars, no crop)
 //  "pixel"   integer scaling, crisp for pixel art
-emerald.clearDesignResolution(); // back to 1:1 CSS pixels
+engine.clearDesignResolution(); // back to 1:1 CSS pixels
 
 // Mouse/touch coordinates -> world space (accounts for the design scale,
 // letterbox offset, camera zoom/position, and DPR):
-const world = emerald.screenToWorld(input.mouse.x, input.mouse.y);
+const world = engine.screenToWorld(input.mouse.x, input.mouse.y);
 ```
 
 ### Auto-pause & lifecycle
@@ -2190,15 +2177,15 @@ const world = emerald.screenToWorld(input.mouse.x, input.mouse.y);
 `run()` pauses the loop when the tab is hidden (stops audio-desync, timer pileups, and giant delta-time spikes on return). Hooks let you pause music or show an overlay; you can also pause manually:
 
 ```javascript
-emerald.run(update, {
+engine.run(update, {
   pauseOnBlur: true, // default: pause when the tab is hidden
   pauseOnWindowBlur: false, // stricter: also pause when the window loses focus
   onPause: () => audio.setMasterVolume(0),
   onResume: () => audio.setMasterVolume(1),
 });
 
-emerald.pause(); // e.g. from your own pause menu
-emerald.resume();
+engine.pause(); // e.g. from your own pause menu
+engine.resume();
 ```
 
 The first `dt` after resuming is clamped (`maxDelta`, default 0.25s), so physics never explodes after a long background stint.
@@ -2217,20 +2204,65 @@ drawable.dispose(); // lowest level, safe to call twice
 Lost WebGL contexts (mobile tab switches, GPU resets, laptops waking) are survived automatically: rendering pauses on loss, and on restore the engine recompiles shaders, re-uploads every cached texture, rebuilds all drawable buffers, custom `Material`s, post effects, and render targets, then resumes. Optional hooks:
 
 ```javascript
-emerald.onContextLost(() => overlay.show("Recovering graphics..."));
-emerald.onContextRestored(() => overlay.hide());
+engine.onContextLost(() => overlay.show("Recovering graphics..."));
+engine.onContextRestored(() => overlay.hide());
 ```
 
 Spritesheet frame UVs are inset half a texel everywhere, so frames never bleed into neighboring cells. For pixel-art games also snap the camera to whole pixels:
 
 ```javascript
-emerald.camera.setPixelSnap(true); // rendered position rounds; stored position stays smooth
+engine.camera.setPixelSnap(true); // rendered position rounds; stored position stays smooth
 ```
+
+### Multiple engines on one page
+
+Each `Kurai2D` instance owns its own WebGL context state: shader program, texture cache, render stats and primary camera. Objects (textures, shapes, render targets, materials...) belong to the engine that was current when they were created. A new engine is current right after construction, and each engine makes itself current while it draws, so with one engine you never have to think about it. With several, call `makeCurrent()` before building each engine's objects:
+
+```javascript
+const main = new Kurai2D(mainCanvas);
+const minimap = new Kurai2D(minimapCanvas, { tickGlobals: false });
+
+main.makeCurrent();
+const world = buildWorld(); // textures/sprites for the main canvas
+
+minimap.makeCurrent();
+const overview = buildMinimap(); // textures/sprites for the minimap canvas
+
+main.run((dt) => {
+  main.drawScene(world, dt);
+  minimap.drawScene(overview, dt);
+});
+```
+
+`Time`, `Tween`, `Timer` and `Coroutine` are global and advanced by `drawScene`. Leave `tickGlobals` on (the default) for exactly one engine so they advance once per frame; the engine warns if a second one would also tick them. Call `engine.destroy()` to stop an engine's loop and remove its listeners when you tear it down.
+
+## Migrating from Emerald
+
+Kurai2D started as a fork of Emerald 3.4.1. The API is the same apart from these renames:
+
+| Emerald                                   | Kurai2D                                    |
+| ----------------------------------------- | ------------------------------------------ |
+| `npm install emeraldengine`               | `npm install kurai2d-engine`               |
+| `import { Emerald } from "emeraldengine"` | `import { Kurai2D } from "kurai2d-engine"` |
+| `new Emerald(canvas)`                     | `new Kurai2D(canvas)`                      |
+| `EmeraldDB`                               | `KuraiDB`                                  |
+| IndexedDB database `"emerald-db"`         | `"kurai2d-db"`                             |
+
+Saves already stored by EmeraldDB stay under the old database name. To keep reading them, configure it once before the first load: `KuraiDB.configure({ name: "emerald-db" })`.
 
 ## NPM scripts
 
-| Script           | Purpose                                      |
-| ---------------- | --------------------------------------------- |
-| `npm test`       | Node test suite (`node --test test/`)         |
-| `npm run types`  | Regenerate `dist/types` from JSDoc via `tsc`  |
-| `npm run format` | Prettier                                      |
+| Script                | Purpose                                                        |
+| --------------------- | -------------------------------------------------------------- |
+| `npm test`            | Node test suite, including a fake-WebGL render suite           |
+| `npm run typecheck`   | Type-check the JavaScript sources from their JSDoc (`checkJs`) |
+| `npm run types`       | Regenerate `dist/types` and strip `@internal` members          |
+| `npm run types:check` | Fail if `dist/types` is out of date                            |
+| `npm run format`      | Prettier                                                       |
+| `npm run check`       | Format check, type check and tests                             |
+
+CI runs the format check, type check and tests on Node 18, 20 and 22 for every push to `main` and every pull request.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

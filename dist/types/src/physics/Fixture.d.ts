@@ -23,8 +23,6 @@ export class Fixture {
     };
     /** @private */
     private proxies;
-    /** @private */
-    private next;
     /**
      * @method getType
      * @description Returns the underlying shape type ("circle" or "polygon").
@@ -180,21 +178,6 @@ export class Fixture {
      */
     getAABB(childIndex?: number): AABB;
     /**
-     * @method createProxies
-     * @description Registers this fixture with the broadphase.
-     * @param {BroadPhase} broadPhase
-     * @param {Transform2} xf
-     * @private
-     */
-    private createProxies;
-    /**
-     * @method destroyProxies
-     * @description Removes this fixture from the broadphase.
-     * @param {BroadPhase} broadPhase
-     * @private
-     */
-    private destroyProxies;
-    /**
      * @method synchronize
      * @description Re-fits the broadphase proxies after the body moved. The AABB
      * spans both the old and the new transform so a fast body's proxy still
@@ -206,6 +189,10 @@ export class Fixture {
      */
     private synchronize;
 }
+/** @import { Shape } from "./Shapes.js" */
+/** @import { BroadPhase } from "./BroadPhase.js" */
+/** @import { Transform2 } from "./Math2D.js" */
+/** @import { Body } from "./Body.js" */
 /**
  * @class FixtureProxy
  * @description The link between a fixture and its entry in the broadphase tree.
@@ -218,4 +205,8 @@ export class FixtureProxy {
     childIndex: any;
     proxyId: number;
 }
+import type { Shape } from "./Shapes.js";
+import type { Body } from "./Body.js";
 import AABB from "./AABB.js";
+import type { BroadPhase } from "./BroadPhase.js";
+import type { Transform2 } from "./Math2D.js";

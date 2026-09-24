@@ -3,6 +3,7 @@ import GameObject from "./components/GameObject.js";
 import GLManager from "./managers/GLManager.js";
 import { initVertexBuffer } from "./GLUtils.js";
 import { Vector2, Vector3 } from "./Physics.js";
+import Color from "./Color.js";
 
 /**
  * @class CanvasText
@@ -208,11 +209,15 @@ class CanvasText extends Drawable {
 
   /**
    * @method setColor
-   * @description Sets the text color (CSS color string) and re-renders.
-   * @param {string} cssColor
+   * @description Sets the text color and re-renders. Accepts a CSS color
+   * string or a Color, like every other Drawable.
+   * @param {string|Color} color
    */
-  setColor(cssColor) {
-    this.fillStyle = cssColor;
+  setColor(color) {
+    this.fillStyle =
+      color instanceof Color
+        ? `rgba(${color.r}, ${color.g}, ${color.b}, ${color.a / 255})`
+        : color;
     this.setText(this.text);
   }
 
@@ -228,7 +233,7 @@ class CanvasText extends Drawable {
    * @method _restoreGL
    * @description After a context loss: rebuild the base buffers, recreate this
    * text's own texture, and re-render the current string into it.
-   * @private
+   * @internal
    */
   _restoreGL() {
     if (this._disposed) return;

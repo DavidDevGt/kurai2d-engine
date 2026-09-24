@@ -1,4 +1,5 @@
 export default InstancedTexture;
+/** @import { Vector3 } from "./Physics.js" */
 /**
  * @class InstancedTexture
  * @description Represents an instanced texture component
@@ -17,19 +18,13 @@ declare class InstancedTexture extends Drawable {
     constructor(texturePath?: {}, instanceCount?: number, frameWidth?: number, frameHeight?: number, framesPerRow?: number, totalFrames?: number, animationSpeed?: number, autoPlay?: boolean, pixelart?: boolean, useLighting?: boolean);
     instanceCount: number;
     instances: any[];
-    instanceMatrices: Float32Array<ArrayBuffer>;
-    instanceTexCoords: Float32Array<ArrayBuffer>;
-    instanceColors: Float32Array<ArrayBuffer>;
-    instanceMatrixBuffer: any;
-    instanceTexCoordBuffer: any;
-    instanceColorBuffer: any;
     instanceClickListeners: Map<any, any>;
     instanceHoverListeners: Map<any, any>;
     static: boolean;
     /** @private */
     private _matricesDirty;
     /** @private */
-    private _scratchMatrix;
+    private _scratch;
     /** The animation every instance starts with; set by playAnimation/playAnimationOnce. @private */
     private _defaultAnimation;
     /**
@@ -62,10 +57,43 @@ declare class InstancedTexture extends Drawable {
     clearInstances(): void;
     /**
      * @method updateInstanceCount
-     * @description Updates the instance count of the instanced texture
+     * @description Changes the maximum number of instances, reallocating the
+     * per-instance buffers. Existing instances are kept; any beyond the new
+     * capacity are removed.
      * @param {number} newCount - The new instance count
      */
     updateInstanceCount(newCount: number): void;
+    /**
+     * @method _allocateInstanceData
+     * @description Allocates the CPU-side per-instance arrays and their GPU
+     * buffers for `count` instances.
+     * @private
+     */
+    private _allocateInstanceData;
+    instanceMatrices: Float32Array<ArrayBuffer>;
+    instanceTexCoords: Float32Array<ArrayBuffer>;
+    instanceColors: Float32Array<ArrayBuffer>;
+    /**
+     * @method _createInstanceBuffers
+     * @description Creates GPU buffers from the current per-instance arrays.
+     * @private
+     */
+    private _createInstanceBuffers;
+    instanceMatrixBuffer: any;
+    instanceTexCoordBuffer: any;
+    instanceColorBuffer: any;
+    /**
+     * @method _deleteInstanceBuffers
+     * @description Frees the per-instance GPU buffers.
+     * @private
+     */
+    private _deleteInstanceBuffers;
+    /**
+     * @method _uploadAll
+     * @description Uploads all three per-instance arrays to their buffers.
+     * @private
+     */
+    private _uploadAll;
     /**
      * @method updateInstanceMatrix
      * @description Updates the transformation matrix for a specific instance
@@ -265,9 +293,13 @@ declare class InstancedTexture extends Drawable {
      * instance, then holds each on its last frame: the current instances
      * immediately, and any added later via {@link InstancedTexture#addInstance}.
      * @param {Array} frames - The frames to play
-     * @param {number} [speed=1000] - Milliseconds per frame
+     * @param {number|Array} [speed=1000] - Milliseconds per frame. An array is
+     *   accepted for compatibility with Drawable#playAnimationOnce(animation,
+     *   defaultAnimation, speed): it is ignored (instances hold their last
+     *   frame) and the speed is read from the third argument.
+     * @param {number} [drawableSpeed=1000] - Speed when called Drawable-style
      */
-    playAnimationOnce(frames: any[], speed?: number): void;
+    playAnimationOnce(frames: any[], speed?: number | any[], drawableSpeed?: number): void;
     /**
      * @method stopAnimation
      * @description Stops the shared animation started by playAnimation/
@@ -282,3 +314,4 @@ declare class InstancedTexture extends Drawable {
 }
 import Drawable from "./Drawable.js";
 import Instance from "./Instance.js";
+import type { Vector3 } from "./Physics.js";

@@ -1,5 +1,7 @@
 import TextureManager from "./managers/TextureManager.js";
 
+/** @import Drawable from "./Drawable.js" */
+
 /**
  * @class TextureAtlas
  * @description Loads a packed sprite atlas (image + frame rectangles) and applies

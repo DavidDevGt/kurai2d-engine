@@ -3,6 +3,8 @@ import IDManager from "./managers/IDManager.js";
 import { Vector2, Vector3 } from "./Physics.js";
 import Transform from "./Transform.js";
 
+/** @import Color from "./Color.js" */
+
 /**
  * @class Instance
  * @description Represents an instance
@@ -38,6 +40,13 @@ class Instance {
 
     /** @private */
     this._tint = null;
+    /**
+     * Per-instance flips used by importers that build their own UVs (ForgeLevel).
+     * @internal
+     */
+    this._flipH = false;
+    /** @internal */
+    this._flipV = false;
   }
 
   /**
@@ -78,7 +87,8 @@ class Instance {
   /**
    * @method setParent
    * @description Sets the parent of the instance
-   * @param {Instance} parent - The parent of the instance
+   * @param {import("./InstancedTexture.js").default} parent - The
+   *   InstancedTexture that renders this instance
    */
   setParent(parent) {
     this.parent = parent;
@@ -181,7 +191,7 @@ class Instance {
   /**
    * @method addComponent
    * @description Adds a component to the instance
-   * @param {Component} componentInstance - The component to add
+   * @param {Object} componentInstance - The component to add
    */
   addComponent(componentInstance) {
     const componentType = componentInstance.constructor;
@@ -198,7 +208,7 @@ class Instance {
   /**
    * @method removeComponent
    * @description Removes a component from the instance
-   * @param {Component} component - The component to remove
+   * @param {Object} component - The component to remove
    */
   removeComponent(component) {
     if (component instanceof RigidBody) {
@@ -212,8 +222,8 @@ class Instance {
   /**
    * @method getComponent
    * @description Gets a component from the instance
-   * @param {Component} componentType - The type of the component to get
-   * @returns {Component} - The component
+   * @param {Object} componentType - The type of the component to get
+   * @returns {Object} - The component
    */
   getComponent(componentType) {
     return this.components.find((comp) => comp instanceof componentType);

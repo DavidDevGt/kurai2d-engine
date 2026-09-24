@@ -1,4 +1,4 @@
-# Getting Started with Emerald
+# Getting Started with Kurai2D
 
 A practical walkthrough that takes you from an empty page to a small game:
 a player sprite you can move with keyboard **or gamepad**, tiles to stand on,
@@ -16,24 +16,24 @@ see [Emerald Tile Forge](https://emerald.vahangev.com/forge).
 ```
 
 ```js
-import { Emerald, Scene, Color, InputManager } from "emeraldengine";
+import { Kurai2D, Scene, Color, InputManager } from "kurai2d-engine";
 
 const canvas = document.getElementById("game");
-const emerald = new Emerald(canvas); // WebGL2 context + default camera
-emerald.setBackgroundColor(new Color(30, 34, 50, 255));
+const engine = new Kurai2D(canvas); // WebGL2 context + default camera
+engine.setBackgroundColor(new Color(30, 34, 50, 255));
 
 const scene = new Scene();
 const input = new InputManager();
 
 function resize() {
-  emerald.resize(window.innerWidth, window.innerHeight);
+  engine.resize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener("resize", resize);
 resize();
 
-emerald.run((dt) => {
+engine.run((dt) => {
   scene.update(dt); // ticks Behaviours, physics sync, animations
-  emerald.drawScene(scene, dt); // renders all cameras (+ post effects)
+  engine.drawScene(scene, dt); // renders all cameras (+ post effects)
   input.update(); // advances justPressed/justReleased edges
 });
 ```
@@ -52,7 +52,13 @@ for background-tab pausing and fixed-timestep physics.
 > frames per row. Match them to your own sheet.
 
 ```js
-import { GameObject, Texture, Animator, Vector2, Vector3 } from "emeraldengine";
+import {
+  GameObject,
+  Texture,
+  Animator,
+  Vector2,
+  Vector3,
+} from "kurai2d-engine";
 
 const player = new GameObject(
   "player",
@@ -90,7 +96,7 @@ neighbors (no white seams).
 ### Pixel-art checklist
 
 - Pass `pixelart: true` on textures (NEAREST filtering + whole-pixel positions).
-- Snap the camera: `emerald.camera.setPixelSnap(true)` kills sub-pixel
+- Snap the camera: `engine.camera.setPixelSnap(true)` kills sub-pixel
   shimmer while a smooth-follow camera moves. The stored position stays
   smooth; only the rendered position rounds.
 
@@ -141,7 +147,7 @@ entities, per-tile polygon colliders, and renders all static tiles as **one
 draw call per tileset**). For procedural grids use the engine's `Tilemap`:
 
 ```js
-import { Tilemap, Physics } from "emeraldengine";
+import { Tilemap, Physics } from "kurai2d-engine";
 
 // (name, texturePath, options)
 const map = new Tilemap("ground", "assets/tiles.png", {
@@ -164,7 +170,7 @@ map.buildColliders(physics); // static bodies for solid cells, merged into runs
 ## 5. Sound
 
 ```js
-import { AudioManager } from "emeraldengine";
+import { AudioManager } from "kurai2d-engine";
 const audio = new AudioManager();
 audio.add("assets/jump.wav", "jump", { bus: "sfx" });
 audio.add("assets/theme.mp3", "theme", { bus: "music", loop: true });
@@ -182,7 +188,7 @@ audio.crossfade("theme", "boss", 2.0);
 ## 6. Saving
 
 ```js
-import { Storage } from "emeraldengine";
+import { Storage } from "kurai2d-engine";
 
 Storage.save("save1", { level: 3, coins: 120 }, { version: 2, backup: true });
 
@@ -196,13 +202,13 @@ const data = Storage.load("save1", {
 Writes are versioned envelopes with a `.bak` mirror: a corrupted write
 recovers from backup automatically.
 
-For **large saves** (a persistent world, not just settings), use `EmeraldDB`,
+For **large saves** (a persistent world, not just settings), use `KuraiDB`,
 the async IndexedDB twin with the same API and no 5MB localStorage cap:
 
 ```js
-import { EmeraldDB } from "emeraldengine";
-await EmeraldDB.save("world", worldState, { version: 1 });
-const world = await EmeraldDB.load("world", {
+import { KuraiDB } from "kurai2d-engine";
+await KuraiDB.save("world", worldState, { version: 1 });
+const world = await KuraiDB.load("world", {
   version: 1,
   fallback: newWorld(),
 });
@@ -211,8 +217,8 @@ const world = await EmeraldDB.load("world", {
 ## 7. Post-processing
 
 ```js
-import { PostEffects } from "emeraldengine";
-emerald.addPostEffect(PostEffects.bloom({ threshold: 0.85, intensity: 0.65 }));
+import { PostEffects } from "kurai2d-engine";
+engine.addPostEffect(PostEffects.bloom({ threshold: 0.85, intensity: 0.65 }));
 ```
 
 Bloom over your HUD makes text mushy, so render UI on its own camera and take
@@ -220,7 +226,7 @@ it out of the post-processing pass. Put UI objects on their own layer, give the
 camera that layer, and exclude it:
 
 ```js
-import { Camera } from "emeraldengine";
+import { Camera } from "kurai2d-engine";
 
 const UI_LAYER = 1;
 healthBar.layer = UI_LAYER; // any GameObject that belongs to the HUD
@@ -228,9 +234,9 @@ healthBar.layer = UI_LAYER; // any GameObject that belongs to the HUD
 const uiCamera = new Camera();
 uiCamera.setOnlyLayers([UI_LAYER]); // draws nothing but the HUD
 uiCamera.setExcludeFromPost(true); // and skips bloom/vignette/colorGrade
-emerald.addCamera(uiCamera);
+engine.addCamera(uiCamera);
 
-emerald.camera.setIgnoreLayers([UI_LAYER]); // keep the world camera off the HUD
+engine.camera.setIgnoreLayers([UI_LAYER]); // keep the world camera off the HUD
 ```
 
 ## 8. Cleaning up (do this, it matters)
@@ -249,21 +255,21 @@ user disposes. Skipping this leaks GPU memory across level restarts.
 
 WebGL context loss (mobile tab switches, GPU resets) is handled automatically:
 rendering pauses and every texture, buffer, shader, and render target is
-rebuilt on restore. Hook `emerald.onContextLost(cb)` / `onContextRestored(cb)`
+rebuilt on restore. Hook `engine.onContextLost(cb)` / `onContextRestored(cb)`
 to show an overlay if you want.
 
 ## 9. Watching performance
 
 ```js
-import { DebugOverlay } from "emeraldengine";
+import { DebugOverlay } from "kurai2d-engine";
 const debug = new DebugOverlay();
 // after drawScene each frame:
-debug.update(emerald, scene);
+debug.update(engine, scene);
 ```
 
 The overlay shows FPS, frame-time graph, and the render counters:
 `draws` (GPU draw calls), `quads` (sprites drawn, counting batched instances),
-`binds` (texture switches). Programmatic access: `emerald.getRenderStats()`.
+`binds` (texture switches). Programmatic access: `engine.getRenderStats()`.
 If `draws` grows with your level size, something isn't batched. Reach for
 `Tilemap`, `SpriteBatch`, or the level loader's instanced path.
 

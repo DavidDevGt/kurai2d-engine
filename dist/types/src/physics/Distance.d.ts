@@ -1,3 +1,4 @@
+/** @import { CircleShape, PolygonShape, Shape } from "./Shapes.js" */
 /**
  * @class DistanceProxy
  * @description A convex shape reduced to what GJK needs: a point cloud plus a
@@ -51,4 +52,5 @@ export function distance(output: any, input: any): any;
  * @returns {boolean}
  */
 export function testOverlap(shapeA: Shape, xfA: Transform2, shapeB: Shape, xfB: Transform2): boolean;
+import type { Shape } from "./Shapes.js";
 import { Transform2 } from "./Math2D.js";

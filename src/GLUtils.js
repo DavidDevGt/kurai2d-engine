@@ -8,8 +8,8 @@ function initShaderProgram(gl, vShader, fShader) {
   gl.linkProgram(shaderProgram);
 
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    alert(
-      `[GLUtils.js] > Unable to initialize the shader program: ${gl.getProgramInfoLog(
+    console.error(
+      `[Kurai2D] > Unable to link the shader program: ${gl.getProgramInfoLog(
         shaderProgram
       )}`
     );
@@ -26,8 +26,8 @@ function loadShader(gl, type, source) {
   gl.compileShader(shader);
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    alert(
-      `[GLUtils.js] An error occurred compiling the shaders: ${gl.getShaderInfoLog(
+    console.error(
+      `[Kurai2D] > An error occurred compiling a shader: ${gl.getShaderInfoLog(
         shader
       )}`
     );

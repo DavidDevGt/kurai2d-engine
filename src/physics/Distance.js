@@ -1,6 +1,8 @@
 import { Vec2, Transform2, EPSILON } from "./Math2D.js";
 import { ShapeType } from "./Shapes.js";
 
+/** @import { CircleShape, PolygonShape, Shape } from "./Shapes.js" */
+
 /**
  * @class DistanceProxy
  * @description A convex shape reduced to what GJK needs: a point cloud plus a
@@ -21,9 +23,9 @@ class DistanceProxy {
    */
   set(shape) {
     if (shape.type === ShapeType.CIRCLE) {
-      this.vertices = [shape.p];
+      this.vertices = [/** @type {CircleShape} */ (shape).p];
     } else {
-      this.vertices = shape.vertices;
+      this.vertices = /** @type {PolygonShape} */ (shape).vertices;
     }
     this.radius = shape.radius;
     return this;
@@ -153,7 +155,7 @@ class Simplex {
    * @method solve2
    * @description Closest point on a line segment to the origin, expressed in
    * barycentric coordinates. Drops the vertex that isn't part of the answer.
-   * @private
+   * @internal
    */
   solve2() {
     const w1 = this.v[0].w;
@@ -185,7 +187,7 @@ class Simplex {
    * @method solve3
    * @description Closest point on a triangle to the origin. Reduces the simplex
    * to the feature (vertex, edge or the whole triangle) that owns it.
-   * @private
+   * @internal
    */
   solve3() {
     const w1 = this.v[0].w;

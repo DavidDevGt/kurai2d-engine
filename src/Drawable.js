@@ -7,6 +7,8 @@ import GLManager from "./managers/GLManager.js";
 import RenderStats from "./managers/RenderStats.js";
 import { initVertexBuffer } from "./GLUtils.js";
 
+/** @import Material from "./Material.js" */
+
 const Z_AXIS = [0, 0, 1];
 
 /**
@@ -57,7 +59,7 @@ class Drawable {
     this.texture = null;
     this.useTexture = useTexture;
     this.pixelart = pixelart;
-    /** @private */
+    /** @internal */
     this._disposed = false;
     /** @private */
     this._texRetained = false;
@@ -88,7 +90,7 @@ class Drawable {
     this._pivotX = 0;
     /** @private */
     this._pivotY = 0;
-    /** @private */
+    /** @internal */
     this._hasPivot = false;
     this.animationType = "texturePath";
     this.currentAnimationArray = [];
@@ -98,6 +100,7 @@ class Drawable {
     this.parentObject = null;
     this.isActive = false;
     this.isWireframe = false;
+    /** @type {Function} */
     this.callbackFunction = () => {};
     this.useLighting = useLighting;
 
@@ -118,7 +121,7 @@ class Drawable {
     this._lastMirrored = undefined;
     /** @private */
     this._lastFlippedY = undefined;
-    /** @private */
+    /** @internal */
     this._lastTextureWidth = -1;
 
     /** @private */
@@ -142,7 +145,7 @@ class Drawable {
    * context loss: vertex/texcoord buffers from their kept CPU copies, and a
    * fresh texture pointer from the (re-uploaded) TextureManager cache.
    * Called by GLManager.restoreAll(); not meant for manual use.
-   * @private
+   * @internal
    */
   _restoreGL() {
     if (this._disposed) return;
@@ -268,7 +271,7 @@ class Drawable {
     this.setPivot(ax * 2 - 1, 1 - ay * 2);
   }
 
-  /** @private */
+  /** @internal */
   _applyBlend() {
     if (this.blendMode === "additive") {
       this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE);
@@ -277,7 +280,7 @@ class Drawable {
     }
   }
 
-  /** @private */
+  /** @internal */
   _restoreBlend() {
     if (this.blendMode !== "normal") {
       this.gl.blendFuncSeparate(

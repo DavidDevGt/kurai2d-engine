@@ -3,6 +3,10 @@ import Settings from "./Settings.js";
 import ContactSolver from "./ContactSolver.js";
 import { BodyType } from "./BodyType.js";
 
+/** @import { Contact } from "./Contact.js" */
+/** @import { Joint } from "./Joint.js" */
+/** @import { Body } from "./Body.js" */
+
 /**
  * @class Island
  * @description A connected group of bodies, everything reachable through

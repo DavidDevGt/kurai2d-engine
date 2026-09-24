@@ -1,17 +1,27 @@
-export default Emerald;
+export default Kurai2D;
 /**
- * @class Emerald
- * @description A class that represents the Emerald engine
+ * @class Kurai2D
+ * @description The engine: owns a WebGL2 context, its cameras and lights, and
+ * renders scenes into it.
  * @param {HTMLCanvasElement} canvas - The canvas element
  * @param {Object} [options] - Context options
  * @param {boolean} [options.antialias=true] - Request an MSAA drawing buffer.
  * Pixel-art games that never rotate or scale sprites to fractional sizes can
  * pass `false` for hard, exact pixel edges (and to avoid MSAA texture-edge
  * artifacts); rotated sprites and shapes will then be aliased.
+ * @param {boolean} [options.tickGlobals=true] - Whether `drawScene` advances
+ * the global Time, Tween, Timer and Coroutine systems. With several engines
+ * on one page, leave it on for exactly one of them so those systems advance
+ * once per frame.
  */
-declare class Emerald {
+declare class Kurai2D {
     constructor(canvas: any, options?: {});
     gl: any;
+    /**
+     * The RenderContext holding this engine's GL state. Objects created while
+     * it is current belong to this engine.
+     */
+    context: import("./managers/RenderContext.js").default;
     camera: Camera;
     cameras: Camera[];
     ambientLight: Vector3;
@@ -23,8 +33,8 @@ declare class Emerald {
     private _drawOrder;
     /**
      * Auto-batches consecutive plain-Texture objects that qualify (see
-     * _isAutoBatchable) into single draw calls instead of one drawArrays per
-     * object. See _queueBatchedDraw.
+     * isAutoBatchable in render/DrawList.js) into single draw calls instead of
+     * one drawArrays per object.
      * @private
      */
     private _autoBatch;
@@ -35,25 +45,7 @@ declare class Emerald {
     /** @private */
     private _identityView;
     /** @private */
-    private _ambient;
-    /** @private */
-    private _lightPositions;
-    /** @private */
-    private _lightColors;
-    /** @private */
-    private _lightIntensities;
-    /** @private */
-    private _lightRadii;
-    /** @private */
-    private _dirLightPositions;
-    /** @private */
-    private _dirLightDirections;
-    /** @private */
-    private _dirLightColors;
-    /** @private */
-    private _dirLightIntensities;
-    /** @private */
-    private _dirLightWidths;
+    private _lights;
     backgroundColor: {
         r: number;
         g: number;
@@ -69,55 +61,38 @@ declare class Emerald {
         mode: string;
     };
     /** @private */
-    private _paused;
+    private _loop;
+    tickGlobals: any;
+    /** @private */
+    private _destroyed;
+    /**
+     * @method makeCurrent
+     * @description Makes this engine's RenderContext current. Objects created
+     * afterwards (textures, shapes, render targets, materials...) belong to
+     * this engine. Only needed when several engines share a page: a new engine
+     * is current right after construction, and each engine makes itself
+     * current while it draws.
+     * @returns {Kurai2D} - this
+     */
+    makeCurrent(): Kurai2D;
     /**
      * @method _initProgram
-     * @description Compiles the standard shader program and caches every attrib
-     * and uniform location. Called from the constructor and again after a WebGL
-     * context loss is restored (all programs die with the context).
+     * @description Compiles the standard shader program and publishes it to the
+     * engine's RenderContext. Called from the constructor and again after a
+     * WebGL context loss is restored (all programs die with the context).
      * @private
      */
     private _initProgram;
-    shaderProgram: any;
     programInfo: {
-        program: any;
+        program: WebGLProgram;
         attribLocations: {
-            vertexPosition: any;
-            aTexCoord: any;
-            instanceMatrix: any;
-            instanceTexCoord0: any;
-            instanceTexCoord1: any;
-            instanceTexCoord2: any;
-            instanceTexCoord3: any;
-            instanceColor: any;
+            [x: string]: number;
         };
         uniformLocations: {
-            projectionMatrix: any;
-            globalViewMatrix: any;
-            instancedModelViewMatrix: any;
-            uModelMatrix: any;
-            uInstancedModelMatrix: any;
-            uAmbientLightValues: any;
-            uSampler: any;
-            color: any;
-            useTexture: any;
-            useInstances: any;
-            useText: any;
-            useLighting: any;
-            uOpacity: any;
-            uLightPosition: any;
-            uLightColor: any;
-            uLightIntensity: any;
-            uLightRadius: any;
-            uActiveLights: any;
-            uDirLightPosition: any;
-            uDirLightDirection: any;
-            uDirLightColor: any;
-            uDirLightIntensity: any;
-            uDirLightWidth: any;
-            uActiveDirLights: any;
+            [x: string]: WebGLUniformLocation;
         };
     };
+    shaderProgram: WebGLProgram;
     /**
      * @method _bindContextGuards
      * @description Installs webglcontextlost/restored handlers: on loss the
@@ -126,6 +101,8 @@ declare class Emerald {
      * @private
      */
     private _bindContextGuards;
+    /** @private */
+    private _canvas;
     /** @private */
     private _contextLost;
     /** @private */
@@ -138,8 +115,9 @@ declare class Emerald {
     private _onCtxRestored;
     /**
      * @method getRenderStats
-     * @description Render counters for the most recent completed frame:
-     * { drawCalls, quads, textureBinds }. DebugOverlay shows these automatically.
+     * @description Render counters for this engine's most recent completed
+     * frame: { drawCalls, quads, textureBinds }. DebugOverlay shows these
+     * automatically.
      * @returns {{drawCalls:number, quads:number, textureBinds:number}}
      */
     getRenderStats(): {
@@ -152,26 +130,34 @@ declare class Emerald {
      * @description Registers a callback fired when the WebGL context is lost
      * (e.g. to show a "please wait" overlay).
      * @param {Function} cb
-     * @returns {Emerald} - this
+     * @returns {Kurai2D} - this
      */
-    onContextLost(cb: Function): Emerald;
+    onContextLost(cb: Function): Kurai2D;
     /**
      * @method onContextRestored
      * @description Registers a callback fired after the context and all GPU
      * resources have been rebuilt.
      * @param {Function} cb
-     * @returns {Emerald} - this
+     * @returns {Kurai2D} - this
      */
-    onContextRestored(cb: Function): Emerald;
+    onContextRestored(cb: Function): Kurai2D;
     /**
      * @method _restoreContext
      * @description Rebuilds everything the GPU forgot: the standard program,
      * cached textures (from the surviving image cache), every registered
-     * drawable's buffers, custom Materials, post-processing programs, and the
-     * scene render target. Runs on the webglcontextrestored event.
+     * drawable's buffers, custom Materials, post-processing programs, the
+     * auto-batch and the scene render target. Runs on the webglcontextrestored
+     * event.
      * @private
      */
     private _restoreContext;
+    /**
+     * @method destroy
+     * @description Stops the loop, removes the engine's event listeners and
+     * releases its post-processing resources. The engine can't be used
+     * afterwards. Use it when tearing down one of several engines on a page.
+     */
+    destroy(): void;
     /**
      * @method setDesignResolution
      * @description Makes the world render at a fixed design resolution that is
@@ -196,19 +182,16 @@ declare class Emerald {
     clearDesignResolution(): void;
     /**
      * @method _viewportFor
-     * @description Computes the device-pixel GL viewport rect and the world-space
-     * extents (`worldW` x `worldH`) for a camera, honoring the active design
-     * resolution + fit mode. Without a design resolution it returns the camera's
-     * screen sub-rect at the canvas CSS size (legacy behavior).
+     * @description Viewport rect and world extents for a camera. See
+     * computeViewport in render/Viewport.js.
      * @private
      */
     private _viewportFor;
     /**
      * @method _clientToView
      * @description Maps a client/CSS pixel coordinate to pre-camera view space
-     * (origin center, +Y up), honoring DPR, design resolution and fit mode
-     * (including letterbox offset). This is also the screen-space coordinate used
-     * for `screenSpace` objects. Camera transform is applied separately by
+     * (origin center, +Y up). This is also the screen-space coordinate used for
+     * `screenSpace` objects. Camera transform is applied separately by
      * `screenToWorld`.
      * @private
      * @returns {{x:number, y:number}}
@@ -242,17 +225,17 @@ declare class Emerald {
      * @method addPostEffect
      * @description Appends a post-processing effect (enabling the pipeline if
      * needed). See PostEffects for the built-ins.
-     * @param {PostEffect} effect
-     * @returns {Emerald} - this
+     * @param {import("./PostProcessor.js").PostEffect} effect
+     * @returns {Kurai2D} - this
      */
-    addPostEffect(effect: PostEffect): Emerald;
+    addPostEffect(effect: import("./PostProcessor.js").PostEffect): Kurai2D;
     /**
      * @method removePostEffect
      * @description Removes a previously added post-processing effect.
-     * @param {PostEffect} effect
-     * @returns {Emerald} - this
+     * @param {import("./PostProcessor.js").PostEffect} effect
+     * @returns {Kurai2D} - this
      */
-    removePostEffect(effect: PostEffect): Emerald;
+    removePostEffect(effect: import("./PostProcessor.js").PostEffect): Kurai2D;
     /**
      * @method setAmbientLight
      * @description Sets the ambient light for the scene
@@ -326,18 +309,6 @@ declare class Emerald {
         onPause?: Function;
         onResume?: Function;
     }): Function;
-    /** @private */
-    private _running;
-    /** @private */
-    private _loopLastTime;
-    /** @private */
-    private _fixedAccumulator;
-    /** @private */
-    private _onPause;
-    /** @private */
-    private _onResume;
-    /** @private */
-    private _rafId;
     /**
      * @method stop
      * @description Stops a loop previously started with run().
@@ -357,31 +328,25 @@ declare class Emerald {
      */
     resume(): void;
     /**
-     * @method _bindLifecycle
-     * @description Wires visibility/blur listeners that auto-pause the loop when
-     * the page is backgrounded, per the `run` options.
-     * @private
+     * @method isPaused
+     * @description Whether the loop started with run() is paused.
+     * @returns {boolean}
      */
-    private _bindLifecycle;
-    /** @private */
-    private _onVisibility;
-    /** @private */
-    private _onWinBlur;
-    /** @private */
-    private _onWinFocus;
-    /**
-     * @method _unbindLifecycle
-     * @description Removes any listeners registered by `_bindLifecycle`.
-     * @private
-     */
-    private _unbindLifecycle;
+    isPaused(): boolean;
     /**
      * @method drawScene
      * @description Draws the scene
-     * @param {Scene} scene - The scene to draw
+     * @param {import("./Scene.js").default} scene - The scene to draw
      * @param {number} deltaTime - The delta time
      */
-    drawScene(scene: Scene, deltaTime: number): void;
+    drawScene(scene: import("./Scene.js").default, deltaTime: number): void;
+    /**
+     * @method _beginPass
+     * @description Resets blend/depth/viewport state and binds the standard
+     * program at the start of a render pass.
+     * @private
+     */
+    private _beginPass;
     /**
      * @method _renderCamera
      * @description Renders the sorted draw order through a single camera into its
@@ -389,29 +354,6 @@ declare class Emerald {
      * @private
      */
     private _renderCamera;
-    /**
-     * @method _isAutoBatchable
-     * @description Whether a Drawable can be folded into the auto-batch instead
-     * of issuing its own draw call: it must be a plain Texture (not a subclass
-     * with its own draw() override, and not InstancedTexture, which already
-     * batches via GPU instancing) with no feature the batch's minimal shader
-     * can't reproduce - no custom material (different shader), no lighting
-     * (the batch shader has no lighting terms), no wireframe mode, only the
-     * default "normal" blend mode (the batch never touches blendFunc), and no
-     * custom pivot (the batch's origin offset isn't rotated the way a pivoted
-     * transform is, so it would place a rotated sprite incorrectly).
-     * @private
-     */
-    private _isAutoBatchable;
-    /**
-     * @method _queueBatchedDraw
-     * @description Queues one Texture object's current frame into the shared
-     * SpriteBatch, reproducing the same position/rotation/scale/UV/tint/opacity
-     * math that Drawable.draw() would have applied, so batched and unbatched
-     * rendering are visually identical.
-     * @private
-     */
-    private _queueBatchedDraw;
     /**
      * @method addCamera
      * @description Adds a camera to the render list (for split-screen, etc.).
@@ -437,14 +379,6 @@ declare class Emerald {
      * @param {boolean} enabled - Whether culling is enabled
      */
     setCullingEnabled(enabled: boolean): void;
-    /**
-     * @method _isVisible
-     * @description Conservative AABB visibility test against the view rectangle.
-     * Instanced objects (whose instances spread beyond the owner transform) and
-     * objects flagged `alwaysVisible` are never culled.
-     * @private
-     */
-    private _isVisible;
 }
 import Camera from "./Camera.js";
 import { Vector3 } from "./Physics.js";

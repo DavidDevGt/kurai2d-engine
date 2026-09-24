@@ -1,4 +1,7 @@
-export type BodyType = BodyType;
+/**
+ * BodyType
+ */
+export type BodyType = string;
 export namespace BodyType {
     let STATIC: string;
     let KINEMATIC: string;

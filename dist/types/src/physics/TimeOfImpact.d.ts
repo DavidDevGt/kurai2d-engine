@@ -13,7 +13,10 @@ export function timeOfImpact(input: any): {
     state: string;
     t: number;
 };
-export type TOIState = TOIState;
+/**
+ * TOIState
+ */
+export type TOIState = string;
 export namespace TOIState {
     let SEPARATED: string;
     let TOUCHING: string;

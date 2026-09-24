@@ -3,6 +3,15 @@ import IDManager from "../managers/IDManager.js";
 import { Vector2 } from "../Physics.js";
 import Collider from "./Collider.js";
 
+/** @import { Physics } from "../Physics.js" */
+/** @import GameObject from "./GameObject.js" */
+/** @import Transform from "../Transform.js" */
+/** @import { Shape } from "../physics/Shapes.js" */
+/** @import { Fixture } from "../physics/Fixture.js" */
+/** @import { Contact } from "../physics/Contact.js" */
+/** @import World from "../physics/World.js" */
+/** @import { Body } from "../physics/Body.js" */
+
 /**
  * @class RigidBody
  * @description The game-facing physics body: everything you can do to a body

@@ -14,7 +14,7 @@ export default Coroutine;
  *   - `yield Coroutine.tween(...)`      -> drive a value over time, then continue
  *
  * Coroutines are driven by `Coroutine.update(dt)` (called automatically from
- * `Emerald.drawScene`, so they honor pause/slow-mo via Time.timeScale).
+ * `Kurai2D.drawScene`, so they honor pause/slow-mo via Time.timeScale).
  *
  * @example
  * Coroutine.start(function* () {
@@ -83,7 +83,7 @@ declare class Coroutine {
     /**
      * @method update
      * @description Advances all running coroutines by dt seconds. Driven by
-     * Emerald.drawScene.
+     * Kurai2D.drawScene.
      * @param {number} dt - Seconds since the last frame (time-scaled)
      */
     static update(dt: number): void;

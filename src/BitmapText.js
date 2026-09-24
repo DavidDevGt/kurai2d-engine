@@ -3,6 +3,8 @@ import Instance from "./Instance.js";
 import InstancedTexture from "./InstancedTexture.js";
 import { Vector2, Vector3 } from "./Physics.js";
 
+/** @import Color from "./Color.js" */
+
 /**
  * BitmapText class for rendering text using a bitmap font texture
  * @param {string} text - The text to display

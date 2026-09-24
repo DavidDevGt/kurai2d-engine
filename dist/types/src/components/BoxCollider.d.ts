@@ -1,8 +1,11 @@
 export default BoxCollider;
+/** @import { Vector2 } from "../Physics.js" */
+/** @import GameObject from "./GameObject.js" */
+/** @import RigidBody from "./RigidBody.js" */
 /**
  * @class BoxCollider
  * @extends Collider
- * @param {Rigidbody} rigidbody - The rigidbody to attach the collider to
+ * @param {RigidBody} rigidbody - The rigidbody to attach the collider to
  * @param {Vector2} fixtureSize - The size of the collider
  * @param {number} density - The density of the collider
  * @param {number} friction - The friction of the collider

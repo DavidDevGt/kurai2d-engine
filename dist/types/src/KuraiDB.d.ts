@@ -1,6 +1,6 @@
-export default EmeraldDB;
+export default KuraiDB;
 /**
- * @class EmeraldDB
+ * @class KuraiDB
  * @description Async game-save storage on IndexedDB, the big-world companion
  * to `Storage` (localStorage). Same versioned-envelope semantics (`{v,t,data}`
  * with a `.bak` backup and forward migration), but with no ~5MB quota and no
@@ -13,18 +13,18 @@ export default EmeraldDB;
  *
  * @example
  * // Save / load a world with schema migration:
- * await EmeraldDB.save("world", world, { version: 3 });
- * const world = await EmeraldDB.load("world", {
+ * await KuraiDB.save("world", world, { version: 3 });
+ * const world = await KuraiDB.load("world", {
  *   version: 3,
  *   fallback: makeNewWorld(),
  *   migrate: (old, from) => upgradeWorld(old, from),
  * });
  *
  * // Plain key/value (no envelope):
- * await EmeraldDB.set("settings", { volume: 0.8 });
- * const settings = await EmeraldDB.get("settings", {});
+ * await KuraiDB.set("settings", { volume: 0.8 });
+ * const settings = await KuraiDB.get("settings", {});
  */
-declare class EmeraldDB {
+declare class KuraiDB {
     /**
      * @method isSupported
      * @description Whether IndexedDB exists in this environment.
@@ -36,10 +36,10 @@ declare class EmeraldDB {
      * @description Sets the database and object-store names. Call before the
      * first read/write (once the database is open the names are fixed until
      * `close()`).
-     * @param {Object} [options] - { name = "emerald-db", store = "kv" }
-     * @returns {EmeraldDB} - the class, for chaining
+     * @param {Object} [options] - { name = "kurai2d-db", store = "kv" }
+     * @returns {KuraiDB} - the class, for chaining
      */
-    static configure(options?: any): EmeraldDB;
+    static configure(options?: any): KuraiDB;
     /**
      * @method _open
      * @description Lazily opens (and creates) the database. Shared promise so
@@ -126,7 +126,7 @@ declare class EmeraldDB {
     /**
      * @method importFromStorage
      * @description Copies a save written by the localStorage `Storage` class
-     * into EmeraldDB (envelope preserved). Use once when upgrading an existing
+     * into KuraiDB (envelope preserved). Use once when upgrading an existing
      * game to IndexedDB saves.
      * @param {string} key
      * @returns {Promise<boolean>} - true if something was imported
@@ -152,7 +152,7 @@ declare class EmeraldDB {
      */
     private static _resolveEnvelope;
 }
-declare namespace EmeraldDB {
+declare namespace KuraiDB {
     let _name: string;
     let _store: string;
     let _db: any;

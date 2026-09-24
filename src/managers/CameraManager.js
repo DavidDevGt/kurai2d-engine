@@ -1,3 +1,8 @@
+import GLManager from "./GLManager.js";
+
+/** @import { Vector2 } from "../Physics.js" */
+/** @import Camera from "../Camera.js" */
+
 /**
  * @class CameraManager
  * @description Manages the camera for the game
