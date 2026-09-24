@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurai2D Engine - Interactive Examples</title>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(17, 24, 39, 0.8);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.5);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #6366f1;
+      --accent-gradient: linear-gradient(135deg, #6366f1 0%, #ec4899 100%);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 24px;
+      user-select: none;
+    }
+
+    .container {
+      max-width: 1080px;
+      width: 100%;
+    }
+
+    header {
+      margin-bottom: 40px;
+      text-align: center;
+    }
+
+    .brand-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 38px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .version-tag {
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+      padding: 3px 10px;
+      border-radius: 9999px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 600px;
+      margin: 0 auto 20px auto;
+      line-height: 1.5;
+    }
+
+    .quick-start-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-family: monospace;
+      font-size: 13px;
+      color: #cbd5e1;
+      margin-bottom: 32px;
+    }
+
+    .quick-start-box span.code {
+      color: #38bdf8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 24px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-gradient);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: var(--card-hover-border);
+      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card-top {
+      margin-bottom: 20px;
+    }
+
+    .tag-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+
+    .badge-core { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .badge-physics { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-gameplay { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-vfx { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.3); }
+    .badge-perf { background: rgba(168, 85, 247, 0.2); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+
+    .card-num {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .card-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #818cf8;
+      transition: gap 0.15s ease;
+    }
+
+    .card:hover .card-action {
+      gap: 10px;
+      color: #a5b4fc;
+    }
+
+    footer {
+      margin-top: 60px;
+      font-size: 13px;
+      color: #64748b;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand-row">
+        <h1>Kurai2D Engine</h1>
+        <span class="version-tag">v4.0.0</span>
+      </div>
+      <p class="subtitle">
+        Interactive demonstrations and starter recipes showcasing WebGL2 rendering, Box2D-powered rigid body physics, dynamic lighting, particles, and batching.
+      </p>
+      <div class="quick-start-box">
+        <span>Run locally:</span>
+        <span class="code">npm run examples</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- 01: Basic Shapes -->
+      <a href="/examples/01-basic-shapes/index.html" class="card">
+        <div class="card-top">
+          <div class="tag-row">
+            <span class="badge badge-core">Core</span>
+            <span class="card-num">#01</span>
+          </div>
+          <h2 class="card-title">Basic Shapes & Transforms</h2>
+          <p class="card-desc">
+            Quick start with WebGL2 scene initialization, Square2D, Triangle2D and Circle2D primitives, palette switching, and orbital animations.
+          </p>
+        </div>
+        <div class="card-action">Launch Example →</div>
+      </a>
+
+      <!-- 02: Physics Sandbox -->
+      <a href="/examples/02-physics-sandbox/index.html" class="card">
+        <div class="card-top">
+          <div class="tag-row">
+            <span class="badge badge-physics">Physics</span>
+            <span class="card-num">#02</span>
+          </div>
+          <h2 class="card-title">2D Physics Sandbox</h2>
+          <p class="card-desc">
+            Interactive rigid-body world featuring gravity, ramps, restitution bounce, friction, and click-to-spawn crates and balls.
+          </p>
+        </div>
+        <div class="card-action">Launch Example →</div>
+      </a>
+
+      <!-- 03: Platformer -->
+      <a href="/examples/03-platformer/index.html" class="card">
+        <div class="card-top">
+          <div class="tag-row">
+            <span class="badge badge-gameplay">Gameplay</span>
+            <span class="card-num">#03</span>
+          </div>
+          <h2 class="card-title">2D Platformer & Camera</h2>
+          <p class="card-desc">
+            Classic 2D platformer character controller with InputManager (keyboard/gamepad), raycast ground check, follow camera, and sensor coin pickups.
+          </p>
+        </div>
+        <div class="card-action">Launch Example →</div>
+      </a>
+
+      <!-- 04: Lighting & Particles -->
+      <a href="/examples/04-lighting-and-particles/index.html" class="card">
+        <div class="card-top">
+          <div class="tag-row">
+            <span class="badge badge-vfx">VFX</span>
+            <span class="card-num">#04</span>
+          </div>
+          <h2 class="card-title">Lighting & Particles</h2>
+          <p class="card-desc">
+            Dynamic PointLights and DirectionalLights illuminating lit geometry, combined with real-time ParticleEmitter sparks and fireworks.
+          </p>
+        </div>
+        <div class="card-action">Launch Example →</div>
+      </a>
+
+      <!-- 05: Stress Test -->
+      <a href="/examples/05-stress-test/index.html" class="card">
+        <div class="card-top">
+          <div class="tag-row">
+            <span class="badge badge-perf">Performance</span>
+            <span class="card-num">#05</span>
+          </div>
+          <h2 class="card-title">Stress Test & Batching</h2>
+          <p class="card-desc">
+            High-performance WebGL2 instanced batching simulation moving up to 10,000 independent entities at a fluid 60 frames per second.
+          </p>
+        </div>
+        <div class="card-action">Launch Example →</div>
+      </a>
+    </div>
+
+    <footer>
+      Kurai2D Engine • MIT License • Built for modern WebGL2 game development
+    </footer>
+  </div>
+</body>
+</html>

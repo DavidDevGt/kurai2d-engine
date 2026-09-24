@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurai2D - Basic Shapes & Transforms</title>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="/examples/common.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "kurai2d-engine": "/index.js",
+      "gl-matrix": "/node_modules/gl-matrix/esm/index.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="game"></canvas>
+  </div>
+
+  <div class="hud">
+    <a href="/examples/" class="back-link">← All Examples</a>
+    <div class="hud-header">
+      <span class="hud-title">Basic Shapes & Transforms</span>
+      <span class="hud-badge">Core</span>
+    </div>
+    <div class="hud-desc">
+      Demonstrates WebGL2 rendering of Square2D, Triangle2D and Circle2D primitives, hierarchical transforms and orbital motion.
+    </div>
+    <div class="controls-list">
+      <div class="control-item">
+        <span class="kbd">Mouse</span> Move cursor to attract / interact
+      </div>
+      <div class="control-item">
+        <span class="kbd">Click</span> Randomize palette colors
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-panel">
+    <div class="stat-item">
+      <span class="stat-label">FPS</span>
+      <span class="stat-val" id="fps-counter">60</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Draw Calls</span>
+      <span class="stat-val" id="draw-calls">3</span>
+    </div>
+  </div>
+
+  <script type="module" src="/examples/01-basic-shapes/main.js?v=2"></script>
+</body>
+</html>

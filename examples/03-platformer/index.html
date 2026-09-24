@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurai2D - 2D Platformer & Camera Follow</title>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="/examples/common.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "kurai2d-engine": "/index.js",
+      "gl-matrix": "/node_modules/gl-matrix/esm/index.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="game"></canvas>
+  </div>
+
+  <div class="hud">
+    <a href="/examples/" class="back-link">← All Examples</a>
+    <div class="hud-header">
+      <span class="hud-title">2D Platformer & Camera Follow</span>
+      <span class="hud-badge">Gameplay</span>
+    </div>
+    <div class="hud-desc">
+      Features responsive platformer character controller, fixed-rotation physics body, smooth following camera, and sensor pickups.
+    </div>
+
+    <div class="controls-list">
+      <div class="control-item">
+        <span class="kbd">A</span> <span class="kbd">D</span> or <span class="kbd">←</span> <span class="kbd">→</span> Run Left / Right
+      </div>
+      <div class="control-item">
+        <span class="kbd">Space</span> or <span class="kbd">W</span> Jump
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-panel">
+    <div class="stat-item">
+      <span class="stat-label">FPS</span>
+      <span class="stat-val" id="fps-counter">60</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Coins</span>
+      <span class="stat-val" id="score-counter">0 / 6</span>
+    </div>
+  </div>
+
+  <script type="module" src="/examples/03-platformer/main.js?v=3"></script>
+</body>
+</html>

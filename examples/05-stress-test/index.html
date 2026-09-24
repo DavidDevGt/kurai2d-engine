@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurai2D - Stress Test & Performance</title>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="/examples/common.css">
+  <style>
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "kurai2d-engine": "/index.js",
+      "gl-matrix": "/node_modules/gl-matrix/esm/index.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="game"></canvas>
+  </div>
+
+  <div class="hud">
+    <a href="/examples/" class="back-link">← All Examples</a>
+    <div class="hud-header">
+      <span class="hud-title">Stress Test & Batching</span>
+      <span class="hud-badge">Performance</span>
+    </div>
+    <div class="hud-desc">
+      Benchmarks WebGL2 rendering throughput using InstancedTexture / batching with thousands of independent moving and bouncing entities.
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-add-500" class="btn">+500 Entities</button>
+      <button id="btn-add-1000" class="btn">+1,000</button>
+      <button id="btn-set-5000" class="btn">Set 5,000</button>
+      <button id="btn-reset" class="btn" style="background: #ef4444;">Reset</button>
+    </div>
+
+    <div class="controls-list">
+      <div class="control-item">
+        <span class="kbd">Space</span> Toggle velocity burst
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-panel">
+    <div class="stat-item">
+      <span class="stat-label">FPS</span>
+      <span class="stat-val" id="fps-counter">60</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Entities</span>
+      <span class="stat-val" id="entity-count">1000</span>
+    </div>
+  </div>
+
+  <script type="module" src="/examples/05-stress-test/main.js?v=2"></script>
+</body>
+</html>

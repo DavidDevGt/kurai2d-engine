@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kurai2D - 2D Physics Sandbox</title>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        for (const reg of regs) reg.unregister();
+      });
+    }
+  </script>
+  <link rel="stylesheet" href="/examples/common.css">
+  <style>
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .btn.active {
+      background: #10b981;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "kurai2d-engine": "/index.js",
+      "gl-matrix": "/node_modules/gl-matrix/esm/index.js"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="game"></canvas>
+  </div>
+
+  <div class="hud">
+    <a href="/examples/" class="back-link">← All Examples</a>
+    <div class="hud-header">
+      <span class="hud-title">2D Physics Sandbox</span>
+      <span class="hud-badge">Physics</span>
+    </div>
+    <div class="hud-desc">
+      Interactive rigid-body simulation with gravity, collision solving, friction, restitution, and sleeping states.
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-spawn-box" class="btn active">Spawn: Box</button>
+      <button id="btn-spawn-circle" class="btn btn-secondary">Spawn: Circle</button>
+      <button id="btn-clear" class="btn btn-secondary">Clear</button>
+    </div>
+
+    <div class="controls-list">
+      <div class="control-item">
+        <span class="kbd">Left Click</span> Spawn dynamic object at cursor
+      </div>
+      <div class="control-item">
+        <span class="kbd">Drag</span> Rapid-fire physics bodies
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-panel">
+    <div class="stat-item">
+      <span class="stat-label">FPS</span>
+      <span class="stat-val" id="fps-counter">60</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Bodies</span>
+      <span class="stat-val" id="body-count">0</span>
+    </div>
+  </div>
+
+  <script type="module" src="/examples/02-physics-sandbox/main.js?v=2"></script>
+</body>
+</html>
